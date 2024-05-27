@@ -22,6 +22,36 @@ const styles: any = StyleSheet.create({
       fontSize: 18,
       fontWeight: 'bold',
     },
+    confirmButton: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginVertical: 8,
+        borderWidth: 2,
+        padding: 10,
+        borderRadius: 30,
+        borderColor: '#0596A0',
+        text: {
+          textAlign: 'center',
+          fontWeight: 'bold',
+          color: '#0596A0', 
+        }
+      },
+      cancelButton: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginVertical: 8,
+        borderWidth: 2,
+        padding: 10,
+        borderRadius: 30,
+        borderColor: '#CC0404',
+        text: {
+          textAlign: 'center',
+          fontWeight: 'bold',
+          color: '#CC0404', 
+        }
+      },
     errorText: {
       color: 'red',
       fontSize: 16,

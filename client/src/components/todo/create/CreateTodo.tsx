@@ -50,7 +50,8 @@ const CreateTodo = ({today}: StackProps) => {
     const { control, handleSubmit, reset, formState: { errors }, setValue, setError,clearErrors } = useForm<InputTypes>();  
 
     const [selectedDate, setSelectedDate] = useState(projectExpireDate);
-
+    const [BtnListCompleteVisible, setBtnListCompleteVisible] = useState(false);
+    
     // Upload images
     const [selectedImages, setSelectedImages] = useState<any>([]);
     const [isModalVisible, setModalVisible] = useState(false);
@@ -139,6 +140,7 @@ const CreateTodo = ({today}: StackProps) => {
         clearErrors("content") 
         clearErrors("expireDate") 
         setValue('content', '')
+        setBtnListCompleteVisible(true);
 
       } catch (error) {
         console.error('Error creating todo client:', error);
@@ -293,9 +295,17 @@ const CreateTodo = ({today}: StackProps) => {
                           <Text style={styles.createTodoPage.main.form.dateInputContainer.legend.dotProject}>.</Text>
                         </View>
                       </View>
-                    </View>
+                      </View>
+                     
                   </View>
                 </View>
+                {BtnListCompleteVisible && 
+                  <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                    <TouchableOpacity style={styles.confirmButton} onPress={() => navigation.goBack()}>
+                      <Text style={styles.confirmButton.text}>List Completed</Text>
+                    </TouchableOpacity>
+                  </View>
+                }
               </View>
             </TouchableWithoutFeedback>
           </KeyboardAvoidingView>
