@@ -1,0 +1,21 @@
+{
+    "home": {
+      "greeting": "Hello!",
+      "welcome": "Welcome to my app!"
+    },
+    "profile": {
+      "pageName": "Profile",
+      "title": "Settings",
+      "description": "Change your app settings here.",
+      "profileSelectLang": {
+        "pageName": "Language",
+        "title": "Select Your Language"
+      }
+    },
+    "common": {
+      "continue": "Continue",
+      "cancel": "Cancel",
+      "y": "Yes",
+      "later": "Later"
+    }
+}

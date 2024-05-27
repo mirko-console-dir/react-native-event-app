@@ -1,0 +1,21 @@
+{
+    "home": {
+        "greeting": "こんにちは！",
+        "welcome": "私のアプリへようこそ！"
+    },
+    "profile": {
+        "pageName": "プロフィール",
+        "title": "設定",
+        "description": "アプリの設定を変更します。",
+        "profileSelectLang": {
+            "pageName": "言語",
+            "title": "言語を選択してください"
+        }
+    },
+    "common": {
+        "continue": "続行",
+        "cancel": "キャンセル",
+        "y": "はい",
+        "later": "後で"
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "home": {
+        "greeting": "Ciao!",
+        "welcome": "Benvenuto nella mia app!"
+    },
+    "profile": {
+        "pageName": "Profilo",
+        "title": "Impostazioni",
+        "description": "Modifica le impostazioni dell'app qui.",
+        "profileSelectLang": {
+            "pageName": "Lingua",
+            "title": "Seleziona la tua lingua"
+        }
+    },
+    "common": {
+        "continue": "Continua",
+        "cancel": "Annulla",
+        "y": "Sì",
+        "later": "Dopo"
+    }
+}
