@@ -19,7 +19,7 @@ export default gql`
         content: String
     }
     type Memo {
-        id: ID!
+        id: ID!  
         title: String!
         content: String!
         owner: User!

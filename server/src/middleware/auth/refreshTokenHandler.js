@@ -49,9 +49,9 @@ export const refreshTokenHandler = async (req, res) => {
     const user = await User.findOne({ _id: payload._id });
 
     if (!user) return res.status(401).send({ accessToken: '' });
-  
+      
     const accessToken = jwt.sign(
-      { _id: user._id, email: user.email },
+      { _id: user._id, fullname: user.fullname, email: user.email },
       ACCESS_TOKEN_SECRET,
       { expiresIn: '15m' } // Adjust the expiresIn value as needed
     );

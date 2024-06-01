@@ -15,8 +15,9 @@ import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHt
 import {WebSocketServer} from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { makeExecutableSchema } from '@graphql-tools/schema';
-import redis from 'redis';
+import redis from './redis/redisClient.js';
 
+const DEFAULT_EXPIRATION = 3600  // 1 HOURS
 
 /* To connect the app with MongoDB, we need mongoose */
 async function startServer() {
@@ -29,11 +30,8 @@ async function startServer() {
       dbName: 'todo_app',
     });
     console.log('Database connected');
-    
-    const redisClient = redis.createClient();
-    redisClient.on("error", err =>{
-      console.log("Redis Error",err);
-    })
+
+    const redisClient = await redis.connect();
 
     const app = express();
 
@@ -59,31 +57,26 @@ async function startServer() {
     })
 
     const findUser = async (connectionParams) => {
-      const user = authenticateUser(connectionParams)
-      return user
+      const user = authenticateUser(connectionParams);
+      return user;
     };
+    
     const getDynamicContext = async (ctx, msg, args) => {
+      // Cache the user in the connection context
       // ctx is the graphql-ws Context where connectionParams live
-      if (ctx.connectionParams) {
+      if (!ctx.connectionParams.user) {
         const currentUser = await findUser(ctx.connectionParams);
-        console.log('========currentUser===========');
-        console.log(currentUser);
-        console.log('====================================');
-        return { currentUser };
-      }  
-      // Otherwise let our resolvers know we don't have a current user
-      return { currentUser: null };   
+        ctx.connectionParams.user = currentUser;
+      }
+      return { currentUser: ctx.connectionParams.user };
     };
-
-    const serverCleanup = useServer({ 
-      schema, 
+    
+    const serverCleanup = useServer({
+      schema,
       context: async (ctx, msg, args) => {
-        // Returning an object will add that information to
-        // contextValue, which all of our resolvers have access to.
         return getDynamicContext(ctx, msg, args);
       },
     }, wsServer);
-
     
     const server = new ApolloServer({
       /* Subscription Server Setup */
@@ -136,9 +129,18 @@ async function startServer() {
             const user = !requiresAuthentication ? authenticateUser(req) : null;
             /* to make work the playground login first time than comment line above and decomment follow one */
             //const user = requiresAuthentication ? authenticateUser(req) : null;
-            
-            console.log('is arrived');
-
+            if(user != null){
+                // redis cache 
+                try {
+                  const key = `user:${user._id}`;
+                  await redisClient.hSet(key, 'fullname', user.fullname);
+                  await redisClient.hSet(key, 'email', user.email);
+                  await redisClient.expire(key, DEFAULT_EXPIRATION);  
+                } catch (redisErr) {
+                  console.error("Redis Error:", redisErr);
+                } 
+                // END redis cache
+            }
             const other = 'otherServiceMiddle(req)' // this just for example to show we can pass more stuff in the context
             return {user , other, req , res}
       },

@@ -50,13 +50,14 @@ export default {
         if(buffer != null){
           newUser.avatar = buffer
         }
-   console.log('====================================');
+   console.log('=========newUser================');
    console.log(newUser);
    console.log('====================================');
         // Create a JWT (access token), attach to the user model
         const accessToken = jwt.sign(
             {
                 _id: newUser._id,
+                fullname: newUser.fullname,
                 email
             },
             ACCESS_TOKEN_SECRET,
@@ -99,13 +100,14 @@ export default {
 
         // Check if the email exists, and verify the password
         const user = await User.findOne({ email });
-        
+        //console.log('user logged in ',user)
         if (user && (await bcrypt.compare(password, user.password))) {
 
             // Create an access token
             const accessToken = jwt.sign(
                 {
                     _id: user._id,
+                    fullname: user.fullname,
                     email
                 },
                 ACCESS_TOKEN_SECRET,
