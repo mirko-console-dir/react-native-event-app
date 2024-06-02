@@ -4,6 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import {jwtDecode} from 'jwt-decode';
 
 import { decode as base64Decode, encode as base64Encode } from 'base-64';
+import { BASE_URL as ENV_BASE_URL } from '@env';
 
 // Polyfill for atob and btoa
 if (!global.btoa) {
@@ -20,8 +21,7 @@ const refreshToken = async () => {
         decodedToken = jwtDecode(token);
         const expirationDate = new Date(decodedToken.exp * 1000);
         console.log('Refresh token retrieved:', expirationDate); // Debugging line
-
-        const response = await axios.post('http://192.168.40.134:4000/refreshtoken', {}, {
+        const response = await axios.post(`${ENV_BASE_URL}:4000/refreshtoken`, {}, {
             headers: {
                 authorization: `Bearer ${token}`,
             },

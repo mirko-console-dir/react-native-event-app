@@ -21,8 +21,9 @@ export default {
             if(!memos.length){
               try {
                 memos = await getServerMemos(contextValue.user._id);
+                console.log(memos)
                 // Store memos in Redis for future requests
-                storeMemosRedis(contextValue.user._id, redisClient, memos)
+                storeMemosRedis(contextValue.user._id, memos)
               } catch (error) {
                 console.error("Error retrieving memos from Mongi Db Server:", error);
               }

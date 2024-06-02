@@ -17,7 +17,7 @@ export const getServerMemos = async (userId) => {
   return memos;
 }
   
-export const storeMemosRedis = async (userId, redisClient, memos) =>{
+export const storeMemosRedis = async (userId, memos) =>{
   const key = `user:${userId}:memos`;
   try {
     await Promise.all(memos.map(async (memo) => {

@@ -28,6 +28,7 @@ const authenticateUser = (req) => {
             } catch (error) {
                 //console.error("Token verification error:", error);
                 // Custom error code specified as the third argument to ApolloError
+                console.error(error)
                 throw new ApolloError('Invalid or expired token', 'UNAUTHENTICATED'); 
             }
         } else {
