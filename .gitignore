@@ -32,6 +32,7 @@ yarn-error.*
 # local env files
 server/.env*.local
 server/.env
+client/.env
 server/dump.rdb
 
 # typescript

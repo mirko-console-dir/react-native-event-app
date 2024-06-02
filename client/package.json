@@ -35,6 +35,7 @@
     "react-hook-form": "^7.50.1",
     "react-native": "0.74.1",
     "react-native-country-flag-icon": "^1.2.5",
+    "react-native-dotenv": "^3.4.11",
     "react-native-fetch-api": "^3.0.0",
     "react-native-gesture-handler": "~2.16.1",
     "react-native-keyboard-aware-scroll-view": "^0.9.5",

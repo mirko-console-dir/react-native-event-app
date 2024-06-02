@@ -5,9 +5,11 @@ import deleteFromS3 from "../../utils/deleteFromS3.js";
 import { ApolloError } from 'apollo-server-express';
 import { PubSub } from 'graphql-subscriptions'
 import { withFilter } from 'graphql-subscriptions'; // withFilter for subscription filtering
+import { storeEventsRedis } from "../../redis/events/redisEvents.js";
 
 // functions that resolve specific query
 const pubsub = new PubSub()
+
 
 export default {
     Query: {
@@ -38,12 +40,14 @@ export default {
                 const newProject = new Project({
                 title,
                 expireDate,
-                owner: contextValue.user._id, // Set the owner to the user's ID
+                owner: contextValue.user._id, 
               });
               await newProject.populateOwner();
 
               await newProject.save()
-              
+              // redis cache
+              await storeEventsRedis(contextValue.user._id, [newProject])
+              // END redis cache
               return newProject
             } catch(err){
                 console.log(err);

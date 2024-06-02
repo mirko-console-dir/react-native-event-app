@@ -7,6 +7,7 @@ import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { createClient } from 'graphql-ws';
 import * as SecureStore from 'expo-secure-store';
 import refreshToken from './refreshToken';
+import { BASE_URL as ENV_BASE_URL, WEBSOCKET_LINK_PROTOCOL as ENV_WEBSOCKET_LINK_PROTOCOL} from '@env';
 
 // Auth Link for setting the headers with the token
 const authLink = setContext(async (_, { headers }) => {
@@ -32,6 +33,7 @@ const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) =
 
         graphQLErrors.map(async ({ extensions }) => {
           const errorCode = extensions?.code;
+          console.log('errorCode');
           console.log(errorCode);
 
           if (errorCode === 'UNAUTHENTICATED') {
@@ -73,6 +75,7 @@ const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) =
       }
       if (networkError) {
         console.log('networkError', networkError);
+        console.log('here')
       }
     } catch (error) {
       console.error('Error in handleAuthenticationError:', error);
@@ -82,7 +85,7 @@ const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) =
 });
 
 const wsLink = new GraphQLWsLink(createClient({
-  url: 'ws://192.168.40.134:4000/graphql',
+  url: `${ENV_WEBSOCKET_LINK_PROTOCOL}:4000/graphql`,
   options: {
     reconnect: true,
     lazy: true,
@@ -107,7 +110,7 @@ const wsLink = new GraphQLWsLink(createClient({
 
 // HTTP connection to the API
 const httpLink = createHttpLink({
-    uri: "http://192.168.40.134:4000/graphql",
+    uri: `${ENV_BASE_URL}:4000/graphql`,
     credentials: 'include', // or 'same-origin' based on your needs
 });
 

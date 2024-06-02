@@ -36,7 +36,7 @@ async function startServer() {
     const app = express();
 
    app.use(cors({
-      origin: ['http://192.168.40.134:4000','http://192.168.40.134:8081','exp://192.168.40.134:8081','http://localhost:4000' ], // or whatever your client's origin is
+      origin: [`${process.env.BASE_URL}:4000`,`${process.env.BASE_URL}:8081`,`${process.env.BASE_URL_EXPO}:8081`,'http://localhost:4000' ], // or whatever your client's origin is
       methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
       credentials: true,
       optionsSuccessStatus: 204
@@ -64,6 +64,7 @@ async function startServer() {
     const getDynamicContext = async (ctx, msg, args) => {
       // Cache the user in the connection context
       // ctx is the graphql-ws Context where connectionParams live
+       console.log(ctx.connectionParams)
       if (!ctx.connectionParams.user) {
         const currentUser = await findUser(ctx.connectionParams);
         ctx.connectionParams.user = currentUser;
