@@ -73,7 +73,7 @@ export default {
                     expireDate: expireDate,
                     project: projectId,
                     checkedStatus: false,
-                    images: uploadedImages
+                    images: uploadedImages,
                 });
                 
                 await newTodo.save() // mongodb saving

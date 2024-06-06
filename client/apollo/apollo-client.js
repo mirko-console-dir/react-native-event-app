@@ -12,6 +12,8 @@ import { BASE_URL as ENV_BASE_URL, WEBSOCKET_LINK_PROTOCOL as ENV_WEBSOCKET_LINK
 // Auth Link for setting the headers with the token
 const authLink = setContext(async (_, { headers }) => {
   const token = await SecureStore.getItemAsync('userAccessToken');
+  console.log('Authorization Token:', token);
+
   return {
       headers: {
           ...headers,
@@ -102,8 +104,8 @@ const wsLink = new GraphQLWsLink(createClient({
     connected: () => console.log("connected client"),
     closed: () => console.log("closed"),
     error: (err) => {
-      console.log("error: " + err.message)
-      console.log("error: " + err.code)
+      console.log("error wsLink apollo client: " + err.message)
+      console.log("error wsLink apollo client: " + err.code)
     },
   },
 }));

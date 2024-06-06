@@ -2,7 +2,7 @@ import React from 'react';
 import { Image, Dimensions } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 
-const ProfileAvatar = ({ user }:any  ) => {
+const ProfileAvatar =  React.memo(({ user }:any  ) => {
     const width = Dimensions.get('window').width;
     const avatarWidth = width / 5
     const avatarHeight = avatarWidth 
@@ -13,9 +13,12 @@ const ProfileAvatar = ({ user }:any  ) => {
     </svg>`;
     // Check if the user has an avatar
     if (user.avatar != null) {
+      /* const decodedAvatar = atob(user.avatar.data);*/      
       const decodedAvatar = btoa(
         String.fromCharCode( ...new Uint8Array(user.avatar.data))
       ) 
+      console.log('decodedAvatar')
+
       return (
         <Image
             source={{ uri: `data:image/png;base64,${decodedAvatar}` }}
@@ -30,6 +33,6 @@ const ProfileAvatar = ({ user }:any  ) => {
             height={avatarHeight}
           />
     );
-  };
+  });
   
 export default ProfileAvatar

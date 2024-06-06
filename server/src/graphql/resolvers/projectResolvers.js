@@ -5,11 +5,10 @@ import deleteFromS3 from "../../utils/deleteFromS3.js";
 import { ApolloError } from 'apollo-server-express';
 import { PubSub } from 'graphql-subscriptions'
 import { withFilter } from 'graphql-subscriptions'; // withFilter for subscription filtering
-import { storeEventsRedis } from "../../redis/events/redisEvents.js";
+import { getServerEvents, getRedisEvents, storeEventsRedis, editEventRedis, addCollaboratorsEvent, deleteCollaboratorEvent  } from "../../redis/events/redisEvents.js";
 
 // functions that resolve specific query
 const pubsub = new PubSub()
-
 
 export default {
     Query: {
@@ -18,17 +17,23 @@ export default {
             if (!contextValue.user) {
               throw new Error("Not authenticated");
             }
-        
-            const projects = await Project.find({
-              $or: [
-                { owner: contextValue.user._id }, // Projects where the user is the owner
-                { collaborators: contextValue.user._id }, // Projects where the user is a collaborator
-              ],
-            })
-            .populate('owner')
-            .populate('todos')
-            .populate('collaborators')
+            // try in redis
+            let projects = [];
+            // Try to get memos from Redis
+            projects = await getRedisEvents(contextValue.user._id)
             
+            // END try in redis
+            // if not in cache get from server
+            if(!projects.length){
+              try {
+                projects = await getServerEvents(contextValue.user._id)             
+              } catch (error) {
+                console.error("Error retrieving projects from Mongi Db Server:", error);
+              }
+              // Store projects in Redis for future requests
+              await storeEventsRedis(contextValue.user._id, projects)
+            }
+        
             return projects;
           }
     },
@@ -68,18 +73,16 @@ export default {
               throw new Error('Unauthorized');
             }
 
-            await Project.findByIdAndUpdate(
+            const updatedProject = await Project.findByIdAndUpdate(
               projectId,
               {
-                  $set : {title : input.title, expireDate : input.expireDate},
+                $set: {
+                  ...(input.title && { title: input.title }),
+                  ...(input.expireDate && { expireDate : input.expireDate }),
+                },
               },
               { new: true }
             );
-            const editedProjectFields = {
-              id: projectId,
-              title: input.title,
-              expireDate: input.expireDate
-            }
             
             pubsub.publish('EVENT_UPDATED', {
               eventUpdated: {
@@ -89,8 +92,12 @@ export default {
               },
               userIdTriggedSub: contextValue.user._id,
             });
-   
-            return editedProjectFields;
+            // redis cache
+            const keyCachedEvents = `user:${contextValue.user._id}:events`;
+            await editEventRedis(contextValue.user._id, keyCachedEvents, updatedProject);
+            //END redis cache
+
+            return updatedProject;
           } catch (error) {
             console.error(error);
             throw new Error('Failed to edit the project');
@@ -187,9 +194,10 @@ export default {
                       collaboratorEmail.toLowerCase()
                       return new ApolloError(`User email not found ${collaboratorEmail}`, "COLLABORATOR_EMAIL_NOT_EXIST");
                     } 
+                    console.log(collaborator.avatar)
                     if (!project.collaborators.some((c) => c.equals(collaborator._id))) {
                       collaboratorsToReturn.push({
-                        id: collaborator._id.toString(), // Convert ObjectId to string
+                        id: collaborator._id.toString(), 
                         fullname: collaborator.fullname,
                         email: collaborator.email,
                         avatar: collaborator.avatar,
@@ -205,6 +213,7 @@ export default {
                       },
                       { new: true }
                     );
+
                   } catch (error) {
                     // Handle the error here
                     console.error(error);
@@ -236,6 +245,12 @@ export default {
                   userIdTriggedSub: contextValue.user._id,
                 });
 
+                // redis cache
+                // events add collaborator
+                const keyCachedEvents = `user:${contextValue.user._id}:events`
+                await addCollaboratorsEvent(contextValue.user._id, keyCachedEvents, projectId, collaboratorIds);
+                // END redis cache
+
                 return collaboratorsToReturn
               } catch (error) {
                 console.error(error);
@@ -244,7 +259,7 @@ export default {
         },
         deleteCollaboratorProject: async (_, { projectId, collaboratorId }, contextValue) => {
           try{
-            const project = await Project.findByIdAndUpdate(
+            await Project.findByIdAndUpdate(
               projectId,
               {
                 $pull: { collaborators: collaboratorId },
@@ -259,6 +274,11 @@ export default {
               },
               userIdTriggedSub: contextValue.user._id,
             });
+            // redis cache
+            // delete collaborator
+            const keyCachedEvents = `user:${contextValue.user._id}:events`
+            await deleteCollaboratorEvent(contextValue.user._id, keyCachedEvents, projectId, collaboratorId);
+            //END redis cache
             
             return true
           }catch(error) {

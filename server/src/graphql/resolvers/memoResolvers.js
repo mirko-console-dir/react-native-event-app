@@ -1,6 +1,6 @@
 import { Memo } from "../../models/Memo.js";
 import redisClient from "../../redis/redisClient.js";
-import {getServerMemos, storeMemosRedis, getMemosRedis, editMemoRedis, deleteMemoRedis} from "../../redis/memos/redisMemos.js"
+import {getServerMemos, storeMemosRedis, getRedisMemos, editMemoRedis, deleteMemoRedis} from "../../redis/memos/redisMemos.js"
 
 
 export default {
@@ -15,7 +15,7 @@ export default {
             let memos = [];
                       
             // Try to get memos from Redis
-            memos = await getMemosRedis(key)
+            memos = await getRedisMemos(key)
             // END try in redis
             // if not in cache get from server
             if(!memos.length){
