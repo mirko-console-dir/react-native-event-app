@@ -85,7 +85,8 @@ export const editMemoRedis = async (userId, keyCachedMemos, updatedMemo) => {
   }
 }
   
-export const deleteMemoRedis = async (userId, keyCachedMemos, deletedMemoId) => {
+export const deleteMemoRedis = async (userId, deletedMemoId) => {
+  const keyCachedMemos = `user:${userId}:memos`;
   const cachedMemos = await redisClient.sMembers(keyCachedMemos);
   try {
     if (cachedMemos) {
@@ -93,6 +94,7 @@ export const deleteMemoRedis = async (userId, keyCachedMemos, deletedMemoId) => 
         await restoreMemosRedis(userId)
         return;
       }
+      await redisClient.sRem(keyCachedMemos, deletedMemoId);
 
       const memoKey = `memo:${deletedMemoId}`;
       await redisClient.del(memoKey);

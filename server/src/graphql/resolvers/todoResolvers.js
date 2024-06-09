@@ -7,6 +7,9 @@ import getImagesFromS3 from "../../utils/getImagesFromS3.js";
 import { PubSub } from 'graphql-subscriptions'
 import { withFilter } from 'graphql-subscriptions'; // withFilter for subscription filtering
 
+import { storeTodosRedis, editTodoRedis, deleteTodoRedis, editCheckedStatusTodo } from "../../redis/todos/redisTodos.js";
+import { updateEventStatus  } from "../../redis/events/redisEvents.js";
+
 // functions that resolve specific query
 const pubsub = new PubSub()
 
@@ -93,6 +96,10 @@ export default {
                     userIdTriggedSub: contextValue.user._id,
                 });
 
+                // redis cache
+                await storeTodosRedis(projectId.toString(), [newTodo])
+                // END redis cache
+
                 // Save the updated Project
                 // return the id and the rest of the parameter texting _doc to show all the difference props
                 // return in the apollo server
@@ -110,11 +117,20 @@ export default {
             return wasDeleted;  */
                 try {
                 // Find the todo by ID
+                console.log(ID)
+
+                console.log(typeof ID)
                     const todo = await Todo.findById(ID);
+                    console.log('arrrisgve ')
+
                 // Check if the todo exists
                     if (!todo) {
                         throw new Error('Todo not found');
                     }
+                    console.log('arrrisfdfdfdfdgve ')
+                    console.log(todo)
+
+
                 // Delete the todo from the associated project
                 await Project.findByIdAndUpdate(
                     todo.project,
@@ -132,7 +148,7 @@ export default {
                 }
                 // Delete the todo from the database
                 const wasDeleted = (await Todo.deleteOne({ _id: ID })).deletedCount;
-                
+
                 pubsub.publish('TASK_DELETED', {
                     taskDeleted: {
                         projectId: todo.project,
@@ -140,8 +156,17 @@ export default {
                     },
                     userIdTriggedSub: contextValue.user._id,
                 });
-                  // Return true if the todo was deleted, false otherwise
+                // redis cache
+                await deleteTodoRedis(
+                    todo.project.toString(), 
+                    todo.id.toString(), 
+                    todo.images.length ? todo.images : null, 
+                    todo.comments.length ? todo.comments : null, 
+                ) 
+                // END redis cache
 
+                  // wasDeleted return true if the todo was deleted, false otherwise
+               
                   return wasDeleted === 1;
                 } catch (error) {
                   // console.error(error);
@@ -164,7 +189,10 @@ export default {
                     },
                     { new: true }
                 );
-            
+                // redis cache
+                await editTodoRedis(todo.project.toString(), todo)
+                // END redis cache
+
                 return true;
             } catch (error) {
                 console.error(error);
@@ -192,6 +220,9 @@ export default {
                         },
                         { new: true }
                     );
+                    // redis cache
+                    await updateEventStatus(todo.project.toString(), 'Completed')
+                    // END redis cache
                 } else if (todosLenght > checkedTodos && checkedTodos !== 0) {
                     await Project.findByIdAndUpdate(
                         todo.project,
@@ -200,6 +231,9 @@ export default {
                         },
                         { new: true }
                     );
+                    // redis cache
+                    await updateEventStatus(todo.project.toString(), 'In Progress')
+                    // END redis cache
                 } else {
                     await Project.findByIdAndUpdate(
                         todo.project,
@@ -208,6 +242,9 @@ export default {
                         },
                         { new: true }
                     );
+                    // redis cache
+                    await updateEventStatus(todo.project.toString(), 'Pending')
+                    // END redis cache
                 }
 
                 pubsub.publish('TASK_CHECKED_STATUS', {
@@ -218,6 +255,9 @@ export default {
                     userIdTriggedSub: contextValue.user._id,
                 });
                 // END check if one of the todos is completed
+                // redis cache
+                await editCheckedStatusTodo(todoId, input.checkedStatus.toString())
+                // END redis cache
                 return wasEdited === 1;
             } catch (error) {
                console.error(error);

@@ -26,7 +26,7 @@ export const getServerEvents = async (userId) => {
 }
 
 export const getRedisEvents = async (userId) =>{
-    let events = null;
+    let events = [];
     try {
       const key = `user:${userId}:events`;
 
@@ -61,17 +61,17 @@ export const getRedisEvents = async (userId) =>{
           const cachedEventTodos = await redisClient.sMembers(`event:${eventId}:todos`);
           if(cachedEventTodos){
             todos = await Promise.all(cachedEventTodos.map(async todoId => {
-              const todoData = { _id: new mongoose.Types.ObjectId(todoId)}; 
+              const todoData = { id: new mongoose.Types.ObjectId(todoId)}; 
 
               let todoKey = `todo:${todoId}`
               const redisDataTodo = await redisClient.hGetAll(todoKey);
               redisDataTodo.checkedStatus = JSON.parse(redisDataTodo.checkedStatus)
+
               let comments = []
               const cachedCommentsTodo = await redisClient.sMembers(`todo:${todoId}:comments`);
               if(cachedCommentsTodo){
                 comments = await Promise.all(cachedCommentsTodo.map(async commentId => {
-                  console.log(commentId)
-                  const comment = {_id: new mongoose.Types.ObjectId(commentId)}
+                  const comment = {id: new mongoose.Types.ObjectId(commentId)}
                   let commentKey = `comment:${commentId}`
                   const redisDataComment = await redisClient.hGetAll(commentKey);
               
@@ -91,7 +91,7 @@ export const getRedisEvents = async (userId) =>{
               const cachedImagesTodo = await redisClient.sMembers(`todo:${todoId}:images`);
               if(cachedImagesTodo){
                 images = await Promise.all(cachedImagesTodo.map(async imageId => {
-                  const image = {_id: new mongoose.Types.ObjectId(imageId)}
+                  const image = {id: new mongoose.Types.ObjectId(imageId)}
                   let imageKey = `image:${imageId}`
                   const redisDataImage = await redisClient.hGetAll(imageKey);
              
@@ -100,6 +100,7 @@ export const getRedisEvents = async (userId) =>{
               }
               todoData.images = images;
               // Merge redis data with todoData 
+
               return Object.assign({}, todoData, redisDataTodo);
 
             }))
@@ -108,7 +109,6 @@ export const getRedisEvents = async (userId) =>{
           event.owner = owner
           event.collaborators = eventCollaborators
           event.todos = todos
-
           return { ...event }; 
         }));
       }
@@ -236,20 +236,27 @@ export const deleteCollaboratorEvent = async (userId, keyCachedEvents, eventId, 
         return;
       }
       const keyEventCollaborators = `event:${eventId}:collaborators`
+      await redisClient.sRem(keyEventCollaborators, collaboratorId);
+
       const eventCollaboratorsCached = await redisClient.sMembers(keyEventCollaborators);
   
-      const updatedEventCollaborators = eventCollaboratorsCached.filter(collaborator => {collaborator !== collaboratorId})
-      if(!updatedEventCollaborators.length){
-        await redisClient.del(keyEventCollaborators);
-      } else {
-        await redisClient.del(keyEventCollaborators); 
-        await redisClient.sAdd(keyEventCollaborators, ...updatedEventCollaborators); 
-      }
+      if(!eventCollaboratorsCached.length) await redisClient.del(keyEventCollaborators);
+      
+
     } else {
       await restoreEventsRedis(userId) 
     }
   } catch (error) {
     console.error("Error delete Collaborator Redis:", error);
+  }
+}
+
+export const updateEventStatus = async (eventId, status)=>{
+  try {
+    const eventKey = `event:${eventId}`
+    await redisClient.hSet(eventKey, 'status', status);  
+  } catch (error) {
+    console.error("Error delete updateEventStatus Redis:", error);
   }
 }
 

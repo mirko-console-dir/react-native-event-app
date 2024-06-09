@@ -110,8 +110,7 @@ export default {
                   console.log(`Memo with ID ${id} deleted successfully`);
 
                   // redis
-                  const keyCachedMemos = `user:${contextValue.user._id}:memos`;
-                  await deleteMemoRedis(contextValue.user._id, keyCachedMemos, id);
+                  await deleteMemoRedis(contextValue.user._id, id);
                   // END redis
 
                   return true;

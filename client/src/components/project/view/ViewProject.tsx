@@ -50,12 +50,12 @@ const ViewProject = ({today}: StackProps) => {
     };
     // END MoreIcon Modal Project
 
-    const renderTaskItem =  ({item, index, totalItems}: {item: Todo, index: number, totalItems: number}) => { 
+    const renderTaskItem = ({item, index, totalItems}: {item: Todo, index: number, totalItems: number}) => { 
       return (
-        <>
+        <React.Fragment>
           <TaskItem projectId={item.project} todoId={item.id} calendarView={false} todayTaskCalendarView={false}/>
           {index === totalItems - 1 && <View style={styles.extraSpaceForListItem} />}
-        </>
+        </React.Fragment>
         )
     }
     const handleCreateTask = () => {

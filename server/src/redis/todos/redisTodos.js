@@ -9,6 +9,20 @@ const DEFAULT_EXPIRATION = 3600  // 1 HOURS
 // not need to get from redis is already taking when I get the events 
 //export const getEventRedisTodos = async (userId) =>{
 
+// check status update todo data on redis 
+const isTodoRedisUpdate = async (eventId, todoId) => {
+  try {
+    const keyCachedEventTodos = `event:${eventId}:todos`
+    const cachedEventTodos = await redisClient.sMembers(keyCachedEventTodos);
+    if(!cachedEventTodos.includes(todoId) || !cachedEventTodos){
+      //await restoreEventsRedis(userId)
+      return false;
+    }
+    return true
+  } catch (error) {
+    console.log('Error checking if tido redis is update',error);
+  }
+}
 export const storeTodosRedis = async (eventId, todos) =>{
     const eventTodosKey = `event:${eventId}:todos`;
     try {
@@ -50,7 +64,6 @@ export const storeTodosRedis = async (eventId, todos) =>{
                 await redisClient.expire(imageKey, DEFAULT_EXPIRATION);                      
             })
             }  
-
             await redisClient.expire(todoKey, DEFAULT_EXPIRATION);
         }));
         await redisClient.expire(eventTodosKey, DEFAULT_EXPIRATION);
@@ -58,30 +71,81 @@ export const storeTodosRedis = async (eventId, todos) =>{
       console.error("Redis Error storeEventTodosRedis:", redisErr);
     } 
 }
-
-/* export const editEventRedis = async (userId, keyCachedEvents, updatedEvent) => {
-    try {
-      const cachedEvents = await redisClient.sMembers(keyCachedEvents);
-      console.log(updatedEvent)
-      console.log(updatedEvent.id)
-      if (cachedEvents) {
-        if(!cachedEvents.includes(updatedEvent.id)){
-          //await restoreEventsRedis(userId)
-          return;
-        }
-  
-        const eventKey = `event:${updatedEvent.id}`;
-        await redisClient.hSet(eventKey, 'title', updatedEvent.title);
-        await redisClient.hSet(eventKey, 'expireDate', updatedEvent.expireDate);
-        await redisClient.expire(eventKey, DEFAULT_EXPIRATION);
-  
-      } else {
-        await restoreEventsRedis(userId)
-      }    
-    } catch (error) {
-      console.error("Error edit Events from Redis:", error);
+export const editTodoRedis = async (eventId, updatedTodo) => {
+  try {
+    // check if redis us update
+    const isRedisUpdate = await isTodoRedisUpdate(eventId,updatedTodo._id.toString())
+    if(!isRedisUpdate) return;
+    //console.log(eventId)
+    // 665c43f8cfc5839367eff2a3
+    //console.log(updatedTodo)
+    // {_id: new ObjectId("666186e6d2ef53472e922e71"),content: 'Dttt',expireDate: '2024/06/01',comments: null,images: [],checkedStatus: false,project: new ObjectId("665c43f8cfc5839367eff2a3")}
+    // edit in redis
+    await storeTodosRedis(eventId, [updatedTodo])
+  } catch (error) {
+    console.log('Error editTodoRedis',error);
+  }
+}
+export const deleteTodoRedis = async (eventId, deletedTodoId, images, comments) => {
+  try {
+    // check if redis us update
+    const isRedisUpdate = await isTodoRedisUpdate(eventId,deletedTodoId)
+    if(!isRedisUpdate) return;
+    // remove todo comments
+    if(comments){
+      const keyCachedTodoComments = `todo:${todoId}:comments`
+      const cachedTodoComments = await redisClient.sMembers(keyCachedTodoComments);
+      if(!cachedTodoComments){
+        //await restoreEventsRedis(userId)
+        return;
+      }
+      cachedTodoComments.forEach(async (commentId) => {
+        const keyComment = `comment:${commentId}`
+        await redisClient.del(keyComment); 
+      })
+      await redisClient.del(keyCachedTodoComments); 
     }
-} */
+    // remove todo images
+    if(images){
+      const keyCachedTodoImages = `todo:${todoId}:images`
+      const cachedTodoImages = await redisClient.sMembers(keyCachedTodoImages);
+      if(!cachedTodoImages){
+        //await restoreEventsRedis(userId)
+        return;
+      }
+      cachedTodoImages.forEach(async (imageId) => {
+        const keyImage = `image:${imageId}`
+        await redisClient.del(keyImage); 
+      })
+      await redisClient.del(keyCachedTodoImages); 
+    }
+
+    // remove todo from event todos list 
+    const cachedEventTodosKey = `event:${eventId}:todos`
+    await redisClient.sRem(cachedEventTodosKey, deletedTodoId);
+
+    const cachedEventTodos = await redisClient.sMembers(cachedEventTodosKey);
+    if(!cachedEventTodos.length){
+      await redisClient.del(cachedEventTodosKey)
+      return
+    }
+    // remove todo  
+    const todoKey = `todo:${deletedTodoId}`;
+    await redisClient.del(todoKey); 
+  } catch (error) {
+    console.log('Error deleteTodoRedis',error);
+  }
+  
+}
+
+export const editCheckedStatusTodo = async (todoId, status) => {
+  //console.log(todoId);
+  // 666186485aa1434fc64c14c5
+  //console.log(status);
+  // 'false'
+  const todoKey = `todo:${todoId}`
+  await redisClient.hSet(todoKey, 'checkedStatus', status);  
+}
 
 /* export const addCollaboratorsEvent = async (userId, keyCachedEvents, eventId, collaboratorIds) => {
   try {
