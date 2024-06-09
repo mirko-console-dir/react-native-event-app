@@ -137,16 +137,77 @@ export const deleteTodoRedis = async (eventId, deletedTodoId, images, comments) 
   }
   
 }
-
 export const editCheckedStatusTodo = async (todoId, status) => {
   //console.log(todoId);
   // 666186485aa1434fc64c14c5
   //console.log(status);
   // 'false'
-  const todoKey = `todo:${todoId}`
-  await redisClient.hSet(todoKey, 'checkedStatus', status);  
+  try {
+    const todoKey = `todo:${todoId}`
+    const keyExists = await redisClient.exists(todoKey);
+    if(!keyExists){
+      // await restoreEventsRedis(userId)
+      return
+    }
+    await redisClient.hSet(todoKey, 'checkedStatus', status);  
+  } catch (error) {
+    console.error('Error editCheckedStatusTodo redis',error);
+  }
 }
+export const addTodoCommentRedis = async (todoId, comment) => {
+  try {
+    const todoCommentsKey = `todo:${todoId}:comments`;
+    const cachedTodoComments = await redisClient.sMembers(todoCommentsKey);
+    if(!cachedTodoComments.includes(comment._id.toString())){
+      //await restoreEventsRedis(userId)
+      return;
+    }
+    // update todo comments list redis
+    await redisClient.sAdd(todoCommentsKey, comment._id.toString());
+    await redisClient.expire(todoCommentsKey, DEFAULT_EXPIRATION);
 
+    // add redis comment
+    const commentKey = `comment:${comment._id.toString()}`;
+    await redisClient.hSet(commentKey, 'commentText', comment.commentText);
+    await redisClient.hSet(commentKey, 'author', comment.author._id.toString());
+    await redisClient.expire(commentKey, DEFAULT_EXPIRATION);
+  } catch (error) {
+    console.error('Error addTodoComment redis',error);
+
+  }
+}
+export const deleteTodoCommentRedis = async (todoId, commentId) => {
+  try {
+    const todoCommentsKey = `todo:${todoId}:comments`;
+    const cachedTodoComments = await redisClient.sMembers(todoCommentsKey);
+    if(!cachedTodoComments.includes(commentId)){
+      //await restoreEventsRedis(userId)
+      return;
+    }
+    await redisClient.sRem(todoCommentsKey, commentId);
+
+    // add redis comment
+    const commentKey = `comment:${commentId}`;
+    await redisClient.del(commentKey)
+  } catch (error) {
+    console.error('Error deleteTodoCommentRedis',error);
+  }
+}
+export const editTodoCommentRedis = async (commentId, commentText) => {
+  try {
+    const commentKey = `comment:${commentId}`;
+    const keyExists = await redisClient.exists(commentKey);
+    if(!keyExists){
+      // await restoreEventsRedis(userId)
+      return
+    }
+
+    await redisClient.hSet(commentKey, 'commentText', commentText)
+
+  } catch (error) {
+    console.error('Error editTodoCommentRedis',error);
+  }
+}
 /* export const addCollaboratorsEvent = async (userId, keyCachedEvents, eventId, collaboratorIds) => {
   try {
     const cachedEvents = await redisClient.sMembers(keyCachedEvents);

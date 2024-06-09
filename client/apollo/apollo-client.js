@@ -33,10 +33,10 @@ const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) =
           });
         //END log error
 
-        graphQLErrors.map(async ({ extensions }) => {
+        graphQLErrors.map(async ({ message,extensions }) => {
           const errorCode = extensions?.code;
-          console.log('errorCode');
-          console.log(errorCode);
+          //console.log('errorCode');
+          //console.log(errorCode);
 
           if (errorCode === 'UNAUTHENTICATED') {
             try {
@@ -72,6 +72,9 @@ const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) =
           }
           if(errorCode === 'COLLABORATOR_EMAIL_SAME_AS_USER_EMAIL'){
             Alert.alert(extensions.stacktrace[0])
+          }
+          if(errorCode === 'USER_IS_NOT_AUTHORIZED_COMMENT'){
+            Alert.alert(message)
           }
         });
       }

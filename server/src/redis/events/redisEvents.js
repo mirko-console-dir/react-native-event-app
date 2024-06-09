@@ -254,6 +254,11 @@ export const deleteCollaboratorEvent = async (userId, keyCachedEvents, eventId, 
 export const updateEventStatus = async (eventId, status)=>{
   try {
     const eventKey = `event:${eventId}`
+    const keyExists = await redisClient.exists(eventKey);
+    if(!keyExists){
+      // await restoreEventsRedis(userId)
+      return
+    }
     await redisClient.hSet(eventKey, 'status', status);  
   } catch (error) {
     console.error("Error delete updateEventStatus Redis:", error);

@@ -7,12 +7,42 @@ import getImagesFromS3 from "../../utils/getImagesFromS3.js";
 import { PubSub } from 'graphql-subscriptions'
 import { withFilter } from 'graphql-subscriptions'; // withFilter for subscription filtering
 
-import { storeTodosRedis, editTodoRedis, deleteTodoRedis, editCheckedStatusTodo } from "../../redis/todos/redisTodos.js";
+import { storeTodosRedis, editTodoRedis, deleteTodoRedis, editCheckedStatusTodo, addTodoCommentRedis,deleteTodoCommentRedis,editTodoCommentRedis } from "../../redis/todos/redisTodos.js";
 import { updateEventStatus  } from "../../redis/events/redisEvents.js";
+import { ApolloError } from "apollo-server-express";
 
 // functions that resolve specific query
 const pubsub = new PubSub()
 
+const checkUserAuthorizedAction = async (userId, todoId, commentId) => {
+    try {
+        const todoMatchComment = await Todo.findOne(
+            {
+              _id: todoId,
+              "comments._id": commentId,
+            },
+            {
+              "comments.$": 1, // Project only the specific comment
+            }
+        );
+          
+        if (!todoMatchComment) {
+          return new ApolloError("Todo or comment not found", "NOT_FOUND");
+        }
+        
+        const comment = todoMatchComment.comments[0]; // accesses the specific comment because the projection returns an array with a single element (the matching comment).
+    
+        const authorId = comment.author._id;
+          
+        if (userId != authorId) {
+            return false
+        }
+        return true
+    } catch (error) {
+        console.error('checkUserAuthorizedAction '+error);
+    }
+  
+}
 export default {
     Query: {
         hello: () => "Hello world!", 
@@ -117,19 +147,11 @@ export default {
             return wasDeleted;  */
                 try {
                 // Find the todo by ID
-                console.log(ID)
-
-                console.log(typeof ID)
                     const todo = await Todo.findById(ID);
-                    console.log('arrrisgve ')
-
                 // Check if the todo exists
                     if (!todo) {
                         throw new Error('Todo not found');
                     }
-                    console.log('arrrisfdfdfdfdgve ')
-                    console.log(todo)
-
 
                 // Delete the todo from the associated project
                 await Project.findByIdAndUpdate(
@@ -298,6 +320,9 @@ export default {
                     },
                     userIdTriggedSub: user._id,
                 });
+                // redis cache
+                await addTodoCommentRedis(todoId, storedComment);
+                // END redis cache
 
                 return storedComment;
             }catch (err) {
@@ -306,6 +331,10 @@ export default {
         },
         deleteCommentTodo: async (_,{ todoId, commentId },contextValue) => {
             try {
+                const isAuthorized = await checkUserAuthorizedAction(contextValue.user._id, todoId, commentId);
+                if(!isAuthorized) {
+                    return new ApolloError("You are not authorized to edit or delete other users' comments.", "USER_IS_NOT_AUTHORIZED_COMMENT");
+                }
                 const todo = await Todo.findByIdAndUpdate(
                   todoId,
                   {
@@ -325,6 +354,9 @@ export default {
                     },
                     userIdTriggedSub: contextValue.user._id,
                 });
+                  // redis cache
+                  await deleteTodoCommentRedis(todoId, commentId);
+                  // END redis cache
                 return true
             } catch (error) {
                 console.error('Failed to delete comment', error);
@@ -333,6 +365,11 @@ export default {
         },
         editCommentTodo: async (_,{ todoId, commentId, input }, contextValue) => {
             try {
+                // if you are not author of the comment you cannot edit or delete
+                const isAuthorized = await checkUserAuthorizedAction(contextValue.user._id, todoId, commentId);
+                if(!isAuthorized) {
+                    return new ApolloError("You are not authorized to edit or delete other users' comments.", "USER_IS_NOT_AUTHORIZED_COMMENT");
+                }
                 const todo = await Todo.findOneAndUpdate(
                   {
                     _id: todoId,
@@ -359,6 +396,9 @@ export default {
                     },
                     userIdTriggedSub: contextValue.user._id,
                 });
+                // redis cache
+                await editTodoCommentRedis(commentId, input.commentText)
+                // END redis cache
 
                 return true;
               } catch (error) {
