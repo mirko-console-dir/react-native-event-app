@@ -9,10 +9,10 @@ const CollaboratorAvatar = ({ collaborator, style }: any  ) => {
     <circle cx="12" cy="9" r="3"></circle>
     </svg>`;
     // Check if the collaborator has an avatar
-    console.log(collaborator)
+    //console.log(collaborator)
 
     if (collaborator.avatar != null) {
-      console.log(collaborator.avatar)
+      //console.log(collaborator.avatar)
       // Decode avatar data using createFromBase64
       let decodedAvatar
       if(collaborator.avatar.data){

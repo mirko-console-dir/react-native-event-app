@@ -78,11 +78,12 @@ export default {
             };
         },
         getTodoImages: async (_, { todoId }) => {
+
             const todo = await Todo.findById(todoId)
             if (!todo) throw new Error('No such todo')
 
             const imagesUrls = await getImagesFromS3(todo.images)
-            
+        
             console.log('========imagesUrls==============');
             console.log(imagesUrls);
             console.log('====================================');
@@ -196,6 +197,10 @@ export default {
                 }
         },
         editTodo: async (_, { todoId, input }) => {
+            console.log('input')
+            console.log(input)
+
+            console.log(input.images)
             const {content, expireDate, images} = input
             try {
                 let uploadedImages = []

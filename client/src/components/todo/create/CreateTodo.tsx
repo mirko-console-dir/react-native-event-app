@@ -37,6 +37,10 @@ type StackProps = {
 interface InputTypes {
   content: string;
   expireDate: string;
+  newImages: ImageForm[]
+}
+interface ImageForm {
+  path: string;
 }
 
 const CreateTodo = ({today}: StackProps) => {
@@ -47,18 +51,32 @@ const CreateTodo = ({today}: StackProps) => {
     const { projectId, projectExpireDate, projectTitle }: any = route.params;
     // ENDDate for calendar  
 
-    const { control, handleSubmit, reset, formState: { errors }, setValue, setError,clearErrors } = useForm<InputTypes>();  
-
+    const { control, handleSubmit, reset, formState: { errors }, setValue, getValues, setError, clearErrors } = useForm<InputTypes>({
+      defaultValues: {
+        content: '',
+        expireDate: '',
+        newImages: []
+      }
+    });    
+    
     const [selectedDate, setSelectedDate] = useState(projectExpireDate);
     const [BtnListCompleteVisible, setBtnListCompleteVisible] = useState(false);
     
     // Upload images
+    const [loadingImage,setLoadingImage] = useState<Boolean>(false)
     const [selectedImages, setSelectedImages] = useState<any>([]);
     const [isModalVisible, setModalVisible] = useState(false);
-    const handleImageSelected = (imageUri: any) => {
-      setSelectedImages([...selectedImages, imageUri]);
+
+    const handleImageSelected = async (imageUri: any) => {
+      setSelectedImages([...selectedImages, {uri: imageUri}]);
       setModalVisible(false);
+      // set form data images
+      const existingImages = getValues("newImages")	
+      if(existingImages) setValue('newImages', [...existingImages,imageUri])
+      else setValue('newImages',[imageUri])
+      // END set form data images
     };
+
     const toggleModal = () => {
       if(selectedImages.length > 1) {
         console.warn('You can upload max 2 images for task')
@@ -70,14 +88,20 @@ const CreateTodo = ({today}: StackProps) => {
         }
       }
     };
+
     const removeImage = (index: number) => {
       const updatedImages = selectedImages.filter((_: any, i: number) => i !== index);
       setSelectedImages(updatedImages)
+      // set form data images
+      const existingImages = getValues("newImages");	
+      existingImages.splice(index, 1);
+      setValue('newImages', [...existingImages])
+      // END set form data images
     }
     // END Upload images
 
     // Handle data form to send 
-    async function fetchImageData(imageUri: any) {
+    const fetchImageData = async (imageUri: any) => {
       // Process the uploaded images
       const response : any = await fetch(imageUri);
       const originalFileName = response._bodyBlob._data.name;
@@ -100,8 +124,9 @@ const CreateTodo = ({today}: StackProps) => {
     /*END  CONFIRM ACTION MODAL */
     const [createTodo, { data, error, loading }] = useMutation(CREATE_TODO);
     const dispatch = useDispatch()
+
     const handleCreateTodo = async (formData : InputTypes) => {
-      const {content, expireDate} = formData;
+      const {content, expireDate, newImages} = formData;
       if (!content.trim() || !expireDate) {
         if(!content.trim()){
           setError("content", {
@@ -114,13 +139,15 @@ const CreateTodo = ({today}: StackProps) => {
           })
         }
         return;
-      } 
-  
-      let imageDataArray = []
-      if(selectedImages){
-        const fetchImagePromises = selectedImages.map(fetchImageData);
+      }  
+
+      let imageDataArray : any[] = []
+      if(newImages.length){
+        setLoadingImage(true)
+        const fetchImagePromises = newImages.map(fetchImageData);
         imageDataArray = await Promise.all(fetchImagePromises);
-      }
+      } 
+
       try {
         const result = await createTodo({
           variables: {
@@ -139,12 +166,14 @@ const CreateTodo = ({today}: StackProps) => {
         setSelectedImages([])
         clearErrors("content") 
         clearErrors("expireDate") 
-        setValue('content', '')
+        reset();
         setBtnListCompleteVisible(true);
 
       } catch (error) {
         console.error('Error creating todo client:', error);
-      } 
+      } finally {
+        setLoadingImage(false)
+      }
     }
     // END Handle data form to send 
 
@@ -187,7 +216,7 @@ const CreateTodo = ({today}: StackProps) => {
       })
     }, [navigation])
     // END Save button
-    if(loading){
+    if(loading || loadingImage){
       return (
           <View style={{flex:1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
               <ActivityIndicator size="large" style={{ transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }] }} />
@@ -256,7 +285,7 @@ const CreateTodo = ({today}: StackProps) => {
                               <React.Fragment key={index}>
                                 <TouchableOpacity onPress={() => openCarouselModal(index)}>
                                   <Image 
-                                    source={{ uri: image }} 
+                                    source={{ uri: image.uri }} 
                                     style={{ width: 60, height: 60, marginBottom: 10 }} 
                                   />
                                   <TouchableOpacity style={styles.createTodoPage.main.form.imagesContainer.removeBtn} onPress={() => removeImage(index)}>

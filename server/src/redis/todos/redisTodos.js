@@ -57,10 +57,9 @@ export const storeTodosRedis = async (eventId, todos) =>{
             todo.images.forEach(async (image) => {
                 const imageId = image._id.toString();
                 await redisClient.sAdd(todoImageKey, imageId);
-
                 const imageKey = `image:${imageId}`;
+                await redisClient.hSet(imageKey, 'caption', image.caption);
                 await redisClient.hSet(imageKey, 'imageName', image.imageName);
-                await redisClient.hSet(imageKey, 'url', image.url);
                 await redisClient.expire(imageKey, DEFAULT_EXPIRATION);                      
             })
             }  
