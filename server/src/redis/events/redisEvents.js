@@ -251,12 +251,12 @@ export const deleteCollaboratorEvent = async (userId, keyCachedEvents, eventId, 
   }
 }
 
-export const updateEventStatus = async (eventId, status)=>{
+export const updateEventStatus = async (userId,eventId, status)=>{
   try {
     const eventKey = `event:${eventId}`
     const keyExists = await redisClient.exists(eventKey);
     if(!keyExists){
-      // await restoreEventsRedis(userId)
+      await restoreEventsRedis(userId)
       return
     }
     await redisClient.hSet(eventKey, 'status', status);  
@@ -265,11 +265,25 @@ export const updateEventStatus = async (eventId, status)=>{
   }
 }
 
-const restoreEventsRedis = async (userId) => {
+export const restoreEventsRedis = async (userId) => {
   try {
     const eventsFromServer = getServerEvents(userId)
     await storeEventsRedis(userId, eventsFromServer)
   } catch (error) {
     console.error("Error restore Events Redis:", error);
+  }
+}
+// check status update todo data on redis 
+export const eventHasTodoRedis = async (userId, eventId, todoId) => {
+  try {
+    const keyCachedEventTodos = `event:${eventId}:todos`
+    const cachedEventTodos = await redisClient.sMembers(keyCachedEventTodos); // if the key doesn't exist anymore because expired it will return an empty array
+    if(!cachedEventTodos.includes(todoId)){
+      await restoreEventsRedis(userId)
+      return false;
+    }
+    return true
+  } catch (error) {
+    console.log('Error checking if tido redis is update',error);
   }
 }

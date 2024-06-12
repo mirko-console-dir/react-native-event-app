@@ -7,9 +7,10 @@ import getImagesFromS3 from "../../utils/getImagesFromS3.js";
 import { PubSub } from 'graphql-subscriptions'
 import { withFilter } from 'graphql-subscriptions'; // withFilter for subscription filtering
 
-import { storeTodosRedis, editTodoRedis, deleteTodoRedis, editCheckedStatusTodo, addTodoCommentRedis,deleteTodoCommentRedis,editTodoCommentRedis } from "../../redis/todos/redisTodos.js";
-import { updateEventStatus  } from "../../redis/events/redisEvents.js";
 import { ApolloError } from "apollo-server-express";
+
+import { storeTodosRedis, editTodoRedis, deleteTodoRedis, editCheckedStatusTodo, addTodoCommentRedis,deleteTodoCommentRedis,editTodoCommentRedis,deleteTodoImageRedis } from "../../redis/todos/redisTodos.js";
+import { updateEventStatus } from "../../redis/events/redisEvents.js";
 
 // functions that resolve specific query
 const pubsub = new PubSub()
@@ -181,10 +182,11 @@ export default {
                 });
                 // redis cache
                 await deleteTodoRedis(
+                    contextValue.user._id,
                     todo.project.toString(), 
                     todo.id.toString(), 
-                    todo.images.length ? todo.images : null, 
-                    todo.comments.length ? todo.comments : null, 
+                    todo.images.length ? todo.images.length : null, 
+                    todo.comments.length ? todo.comments.length : null, 
                 ) 
                 // END redis cache
 
@@ -196,11 +198,7 @@ export default {
                   throw new Error('Failed to delete the todo');
                 }
         },
-        editTodo: async (_, { todoId, input }) => {
-            console.log('input')
-            console.log(input)
-
-            console.log(input.images)
+        editTodo: async (_, { todoId, input }, contextValue) => {
             const {content, expireDate, images} = input
             try {
                 let uploadedImages = []
@@ -217,7 +215,7 @@ export default {
                     { new: true }
                 );
                 // redis cache
-                await editTodoRedis(todo.project.toString(), todo)
+                await editTodoRedis(contextValue.user._id,todo.project.toString(), todo)
                 // END redis cache
 
                 return true;
@@ -248,7 +246,7 @@ export default {
                         { new: true }
                     );
                     // redis cache
-                    await updateEventStatus(todo.project.toString(), 'Completed')
+                    await updateEventStatus(contextValue.user._id,todo.project.toString(), 'Completed')
                     // END redis cache
                 } else if (todosLenght > checkedTodos && checkedTodos !== 0) {
                     await Project.findByIdAndUpdate(
@@ -259,7 +257,7 @@ export default {
                         { new: true }
                     );
                     // redis cache
-                    await updateEventStatus(todo.project.toString(), 'In Progress')
+                    await updateEventStatus(contextValue.user._id,todo.project.toString(), 'In Progress')
                     // END redis cache
                 } else {
                     await Project.findByIdAndUpdate(
@@ -270,7 +268,7 @@ export default {
                         { new: true }
                     );
                     // redis cache
-                    await updateEventStatus(todo.project.toString(), 'Pending')
+                    await updateEventStatus(contextValue.user._id,todo.project.toString(), 'Pending')
                     // END redis cache
                 }
 
@@ -283,7 +281,7 @@ export default {
                 });
                 // END check if one of the todos is completed
                 // redis cache
-                await editCheckedStatusTodo(todoId, input.checkedStatus.toString())
+                await editCheckedStatusTodo(contextValue.user._id,todoId, input.checkedStatus.toString())
                 // END redis cache
                 return wasEdited === 1;
             } catch (error) {
@@ -326,7 +324,7 @@ export default {
                     userIdTriggedSub: user._id,
                 });
                 // redis cache
-                await addTodoCommentRedis(todoId, storedComment);
+                await addTodoCommentRedis(contextValue.user._id, todoId, storedComment);
                 // END redis cache
 
                 return storedComment;
@@ -360,7 +358,7 @@ export default {
                     userIdTriggedSub: contextValue.user._id,
                 });
                   // redis cache
-                  await deleteTodoCommentRedis(todoId, commentId);
+                  await deleteTodoCommentRedis(contextValue.user._id, todoId, commentId);
                   // END redis cache
                 return true
             } catch (error) {
@@ -402,7 +400,7 @@ export default {
                     userIdTriggedSub: contextValue.user._id,
                 });
                 // redis cache
-                await editTodoCommentRedis(commentId, input.commentText)
+                await editTodoCommentRedis(contextValue.user._id, commentId, input.commentText)
                 // END redis cache
 
                 return true;
@@ -412,7 +410,7 @@ export default {
                 throw new Error("Failed to edit comment");
               }
         },
-        deleteTaskImage: async (_,{ todoId, imageId, imageName }) => {
+        deleteTaskImage: async (_,{ todoId, imageId, imageName }, contextValue) => {
             try {
                 const todo = await Todo.findByIdAndUpdate(
                     todoId,
@@ -422,6 +420,10 @@ export default {
                     { new: true }
                   );
                 await deleteFromS3(imageName)
+                // redis cache
+                await deleteTodoImageRedis(contextValue.user._id, todoId, imageId)
+                // END redis cache
+
                 return true
             }catch(error){
                 console.error(error);
