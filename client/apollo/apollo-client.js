@@ -12,7 +12,7 @@ import { BASE_URL as ENV_BASE_URL, WEBSOCKET_LINK_PROTOCOL as ENV_WEBSOCKET_LINK
 // Auth Link for setting the headers with the token
 const authLink = setContext(async (_, { headers }) => {
   const token = await SecureStore.getItemAsync('userAccessToken');
-  console.log('Authorization Token:', token);
+  //console.log('Authorization Token:', token);
 
   return {
       headers: {
@@ -21,6 +21,38 @@ const authLink = setContext(async (_, { headers }) => {
       }
   }
 });
+
+// HTTP connection to the API
+const httpLink = createHttpLink({
+  uri: `${ENV_BASE_URL}:4000/graphql`,
+  credentials: 'include', // or 'same-origin' based on your needs
+});
+// Web Socket 
+// Function to create a new WebSocket link
+const createWsLink = () => new GraphQLWsLink(createClient({
+  url: `${ENV_WEBSOCKET_LINK_PROTOCOL}:4000/graphql`,
+  options: {
+    reconnect: true,
+    lazy: true,
+  },
+  connectionParams: async () => {
+    const token = await SecureStore.getItemAsync('userAccessToken');
+    return {
+        headers: {
+            authorization: token ? `Bearer ${token}` : "",
+        }
+    }
+  },
+  on: {
+    connected: () => console.log("connected client"),
+    closed: () => console.log("closed"),
+    error: (err) => {
+      console.log("error wsLink apollo client: " + err.message);
+      console.log("error wsLink apollo client: " + err.code);
+    },
+  },
+}));
+let wsLink = createWsLink();
 
 // Error handling link
 const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) => {
@@ -40,9 +72,6 @@ const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) =
 
           if (errorCode === 'UNAUTHENTICATED') {
             try {
-              console.log('====================================');
-              console.log('arrived');
-              console.log('====================================');
               const newAccessToken = await refreshToken();
               console.log('Token Refresh - New Access Token:', newAccessToken);
 
@@ -56,7 +85,9 @@ const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) =
 
               // Retry the original operation with the new token
               const subscriber = forward(operation).subscribe(observer);
-
+              console.log('operation forward')
+              // reactivate web socket 
+              wsLink = createWsLink();
               // Cleanup subscriptions
               return () => subscriber.unsubscribe();
             } catch (refreshError) {
@@ -80,43 +111,12 @@ const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) =
       }
       if (networkError) {
         console.log('networkError', networkError);
-        console.log('here')
       }
     } catch (error) {
       console.error('Error in handleAuthenticationError:', error);
       observer.error(error);
     }
   });
-});
-
-const wsLink = new GraphQLWsLink(createClient({
-  url: `${ENV_WEBSOCKET_LINK_PROTOCOL}:4000/graphql`,
-  options: {
-    reconnect: true,
-    lazy: true,
-  },
-  connectionParams: async () => {
-    const token = await SecureStore.getItemAsync('userAccessToken');
-    return {
-        headers: {
-            authorization: token ? `Bearer ${token}` : "",
-        }
-    }
-  },
-  on: {
-    connected: () => console.log("connected client"),
-    closed: () => console.log("closed"),
-    error: (err) => {
-      console.log("error wsLink apollo client: " + err.message)
-      console.log("error wsLink apollo client: " + err.code)
-    },
-  },
-}));
-
-// HTTP connection to the API
-const httpLink = createHttpLink({
-    uri: `${ENV_BASE_URL}:4000/graphql`,
-    credentials: 'include', // or 'same-origin' based on your needs
 });
 
 const splitLink = split(

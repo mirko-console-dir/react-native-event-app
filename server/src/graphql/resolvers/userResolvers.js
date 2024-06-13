@@ -63,14 +63,14 @@ export default {
                 email
             },
             ACCESS_TOKEN_SECRET,
-            { expiresIn: "15min" }
+            { expiresIn: process.env.EXPIRE_ACCESS_TOKEN_SECRET }
         );
 
         // Create a refresh token
         const refreshToken = jwt.sign(
             { _id: newUser._id },
             REFRESH_TOKEN_SECRET,
-            { expiresIn: '7d' }
+            { expiresIn: process.env.EXPIRE_REFRESH_TOKEN_SECRET }
         );
 
         // Save the refresh token in the database
@@ -122,7 +122,7 @@ export default {
                 },
                 ACCESS_TOKEN_SECRET,
                 {
-                  expiresIn: "15m"
+                  expiresIn: process.env.EXPIRE_ACCESS_TOKEN_SECRET
                 }
             );
 
@@ -130,7 +130,7 @@ export default {
             const refreshToken = jwt.sign(
                 { _id: user._id },
                 REFRESH_TOKEN_SECRET,
-                { expiresIn: '7d' }
+                { expiresIn: process.env.EXPIRE_REFRESH_TOKEN_SECRET }
             );
            
             // redis cache

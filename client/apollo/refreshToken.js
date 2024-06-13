@@ -17,10 +17,11 @@ const refreshToken = async () => {
     try {
         const token = await SecureStore.getItemAsync('userRefreshToken');
         
-        let decodedToken;
-        decodedToken = jwtDecode(token);
+        let decodedToken = jwtDecode(token);
         const expirationDate = new Date(decodedToken.exp * 1000);
+        
         console.log('Refresh token retrieved:', expirationDate); // Debugging line
+
         const response = await axios.post(`${ENV_BASE_URL}:4000/refreshtoken`, {}, {
             headers: {
                 authorization: `Bearer ${token}`,
