@@ -55,42 +55,56 @@ export const storeTodosRedis = async (eventId, todos) =>{
     try {
         await Promise.all(todos.map(async (todo) => {
             let todoId = todo._id.toString();
-            // if the key exists is gonna create and add otherwise is gonna add
-            await redisClient.sAdd(eventTodosKey, todoId);
-            await redisClient.expire(eventTodosKey, DEFAULT_EXPIRATION);
-    
-            const todoKey = `todo:${todoId}`;
+            // Check if the todo already exists in the event's todos set
+            const eventListTodoExists = await redisClient.sIsMember(eventTodosKey, todoId);
+            if (!eventListTodoExists) {
+              // if the key exists is gonna create and add otherwise is gonna add
+              await redisClient.sAdd(eventTodosKey, todoId);
+              await redisClient.expire(eventTodosKey, DEFAULT_EXPIRATION);
+              
+              const todoKey = `todo:${todoId}`;
+              const todoKeyExists = await redisClient.exists(todoKey);
+              if(!todoKeyExists){
+                await redisClient.hSet(todoKey, 'content', todo.content);
+                await redisClient.hSet(todoKey, 'expireDate', todo.expireDate);
+                await redisClient.hSet(todoKey, 'project', todo.project.toString());  
+                await redisClient.hSet(todoKey, 'checkedStatus', todo.checkedStatus.toString());  
         
-            await redisClient.hSet(todoKey, 'content', todo.content);
-            await redisClient.hSet(todoKey, 'expireDate', todo.expireDate);
-            await redisClient.hSet(todoKey, 'project', todo.project.toString());  
-            await redisClient.hSet(todoKey, 'checkedStatus', todo.checkedStatus.toString());  
+                if (todo.comments && todo.comments.length > 0) {
+                    const todoCommentsKey = `todo:${todoId}:comments`;
+                    
+                    todo.comments.forEach(async (comment) => {
+                        await redisClient.sAdd(todoCommentsKey, comment._id.toString());
+
+                        let commentKey = `comment:${comment._id.toString()}`
+                        const commentKeyExist = await redisClient.exists(commentKey);
+                        if(commentKeyExist){
+                          await redisClient.hSet(commentKey, 'commentText', comment.commentText);
+                          await redisClient.hSet(commentKey, 'author', comment.author._id.toString());
+                          await redisClient.expire(commentKey, DEFAULT_EXPIRATION);
+                        }
+                    })
+                    await redisClient.expire(todoCommentsKey, DEFAULT_EXPIRATION);
+                }
     
-            if (todo.comments && todo.comments.length > 0) {
-                const todoCommentsKey = `todo:${todoId}:comments`;
-                todo.comments.forEach(async (comment) => {
-                    await redisClient.sAdd(todoCommentsKey, comment._id.toString());
-
-                    let commentKey = `comment:${comment._id.toString()}`
-                    await redisClient.hSet(commentKey, 'commentText', comment.commentText);
-                    await redisClient.hSet(commentKey, 'author', comment.author._id.toString());
-                    await redisClient.expire(commentKey, DEFAULT_EXPIRATION);
-                })
-                await redisClient.expire(eventTodosKey, DEFAULT_EXPIRATION);
+                if (todo.images && todo.images.length > 0) {
+                  const todoImageKey = `todo:${todoId}:images`;
+                  todo.images.forEach(async (image) => {
+                      const imageId = image._id.toString();
+                      await redisClient.sAdd(todoImageKey, imageId);
+                      const imageKey = `image:${imageId}`;
+                      const imageKeyExists = await redisClient.exists(imageKey);
+                      if(!imageKeyExists){
+                        await redisClient.hSet(imageKey, 'caption', image.caption);
+                        await redisClient.hSet(imageKey, 'imageName', image.imageName);
+                        await redisClient.expire(imageKey, DEFAULT_EXPIRATION);                      
+                      }
+                  })
+                  await redisClient.expire(todoImageKey, DEFAULT_EXPIRATION);
+                }  
+                await redisClient.expire(todoKey, DEFAULT_EXPIRATION);
+              }
             }
-
-            if (todo.images && todo.images.length > 0) {
-            const todoImageKey = `todo:${todoId}:images`;
-            todo.images.forEach(async (image) => {
-                const imageId = image._id.toString();
-                await redisClient.sAdd(todoImageKey, imageId);
-                const imageKey = `image:${imageId}`;
-                await redisClient.hSet(imageKey, 'caption', image.caption);
-                await redisClient.hSet(imageKey, 'imageName', image.imageName);
-                await redisClient.expire(imageKey, DEFAULT_EXPIRATION);                      
-            })
-            }  
-            await redisClient.expire(todoKey, DEFAULT_EXPIRATION);
         }));
         await redisClient.expire(eventTodosKey, DEFAULT_EXPIRATION);
     } catch (redisErr) {
