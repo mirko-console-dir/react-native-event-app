@@ -16,9 +16,6 @@ import {WebSocketServer} from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import redis from './redis/redisClient.js';
-import { checkUserExist } from './redis/user/redisUser.js';
-
-const DEFAULT_EXPIRATION = 3600  // 1 HOURS
 
 /* To connect the app with MongoDB, we need mongoose */
 async function startServer() {
@@ -32,7 +29,8 @@ async function startServer() {
     });
     console.log('Database connected');
 
-    const redisClient = await redis.connect();
+    // connect redis
+    await redis.connect();
 
     const app = express();
 
@@ -65,7 +63,7 @@ async function startServer() {
     const getDynamicContext = async (ctx, msg, args) => {
       // Cache the user in the connection context
       // ctx is the graphql-ws Context where connectionParams live
-       console.log(ctx.connectionParams)
+      //console.log(ctx.connectionParams)
       if (!ctx.connectionParams.user) {
         const currentUser = await findUser(ctx.connectionParams);
         ctx.connectionParams.user = currentUser;

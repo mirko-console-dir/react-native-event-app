@@ -46,7 +46,7 @@ export default {
                 await newMemo.populateOwner();
                 await newMemo.save()
                 // redis cache 
-                storeMemosRedis(contextValue.user._id, redisClient, [newMemo])
+                storeMemosRedis(contextValue.user._id, [newMemo])
                 // END redis cache
                 return newMemo
               } catch(err){

@@ -51,23 +51,23 @@ const useAuth = () => {
             decodedToken = jwtDecode(token);
           } catch (error) {
             console.error('Error decoding token:', error);
+            setIsLoggedIn(false);
+            return;
           }
-          console.log('arffsd')
 
           const expirationDate = new Date(decodedToken.exp * 1000);
 
           // Check if the token is still valid
           if (expirationDate > new Date()) {
             setIsLoggedIn(true);
-            console.log('expirationDate')
           } else {
-            askFreshToken(token)
+            await askFreshToken(token)
           }
 
           const usr = await AsyncStorage.getItem('user')
 
           if (!usr){
-            askFreshToken(token)
+            await askFreshToken(token)
           }
         }
       } catch (error) {
@@ -86,8 +86,10 @@ const useAuth = () => {
     const fetchUser = async () => {
         // Get user from async storage and dispatch to the redux store
         const user = await AsyncStorage.getItem('user');
-        const userLoggedIn = JSON.parse(user);
-        dispatch(setUser(userLoggedIn));
+        if (user) {
+          const userLoggedIn = JSON.parse(user);
+          dispatch(setUser(userLoggedIn));
+        }
     };
     if (isLoggedIn) {
       fetchUser();
@@ -98,4 +100,3 @@ const useAuth = () => {
 };
 
 export default useAuth;
-

@@ -8,8 +8,8 @@ import redisClient from '../../redis/redisClient.js';
 export const refreshTokenHandler = async (req, res) => {
     const authHeader = req.headers.authorization;
     console.log('=======refreshTokenHandler============');
-    console.log(req);
-    console.log(authHeader);
+    //console.log(req);
+    //console.log(authHeader);
     console.log('====================================');
     if (!authHeader) {
       //console.error('No Authorization header present.');
@@ -64,7 +64,7 @@ export const refreshTokenHandler = async (req, res) => {
     const accessToken = jwt.sign(
       { _id: user._id, fullname: user.fullname, email: user.email },
       ACCESS_TOKEN_SECRET,
-      { expiresIn: '15m' } // Adjust the expiresIn value as needed
+      { expiresIn: process.env.EXPIRE_ACCESS_TOKEN_SECRET } // Adjust the expiresIn value as needed
     );
   
     res.send({ accessToken });

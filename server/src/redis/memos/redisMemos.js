@@ -16,7 +16,7 @@ export const getServerMemos = async (userId) => {
   }
   return memos;
 }
-  
+
 export const storeMemosRedis = async (userId, memos) =>{
   const key = `user:${userId}:memos`;
   try {
@@ -28,11 +28,14 @@ export const storeMemosRedis = async (userId, memos) =>{
       // create a new hash for the new memo 
       // hset store fields id, title, content etc...
       const memoKey = `memo:${memo.id}`;
-      await redisClient.hSet(memoKey, 'title', memo.title);
-      await redisClient.hSet(memoKey, 'content', memo.content);
-      await redisClient.hSet(memoKey, 'owner', userId);
-
-      await redisClient.expire(memoKey, DEFAULT_EXPIRATION);
+      const memoKeyExists = await redisClient.exists(memoKey);
+      if(!memoKeyExists){
+        await redisClient.hSet(memoKey, 'title', memo.title);
+        await redisClient.hSet(memoKey, 'content', memo.content);
+        await redisClient.hSet(memoKey, 'owner', userId);
+  
+        await redisClient.expire(memoKey, DEFAULT_EXPIRATION);
+      }
   }));
   } catch (redisErr) {
     console.error("Redis Error:", redisErr);

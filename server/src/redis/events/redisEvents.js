@@ -133,29 +133,28 @@ export const storeEventsRedis = async (userId, events) =>{
           await redisClient.hSet(eventKey, 'expireDate', event.expireDate);
           await redisClient.hSet(eventKey, 'status', event.status);
           await redisClient.hSet(eventKey, 'owner', userId);
-        }
-  
-  
-        if (event.todos && event.todos.length > 0) {
-          await storeTodosRedis(event.id, event.todos)
-        }
-  
-        if (event.collaborators && event.collaborators.length > 0) {
-          const eventCollaboratorsKey = `event:${event._id}:collaborators`;
-          const ownerCollaboratorsKey = `user:${userId}:collaborators`;
-          event.collaborators.forEach(async (collaborator) => {
-            await redisClient.sAdd(eventCollaboratorsKey, collaborator.id)
-            await redisClient.sAdd(ownerCollaboratorsKey, collaborator.id)
-            // store collaborator as user
-            // Check if the collaborator user key already exists            
-            await checkUserExist(collaborator._id);
-          })
-          await redisClient.expire(eventCollaboratorsKey, process.env.DEFAULT_EXPIRATION_REDIS);
-          await redisClient.expire(ownerCollaboratorsKey, process.env.DEFAULT_EXPIRATION_REDIS);
+          if (event.todos && event.todos.length > 0) {
+            await storeTodosRedis(event.id, event.todos)
+          }
+    
+          if (event.collaborators && event.collaborators.length > 0) {
+            const eventCollaboratorsKey = `event:${event._id}:collaborators`;
+            const ownerCollaboratorsKey = `user:${userId}:collaborators`;
+            event.collaborators.forEach(async (collaborator) => {
+              await redisClient.sAdd(eventCollaboratorsKey, collaborator.id)
+              await redisClient.sAdd(ownerCollaboratorsKey, collaborator.id)
+              // store collaborator as user
+              // Check if the collaborator user key already exists            
+              await checkUserExist(collaborator._id);
+            })
+            await redisClient.expire(eventCollaboratorsKey, process.env.DEFAULT_EXPIRATION_REDIS);
+            await redisClient.expire(ownerCollaboratorsKey, process.env.DEFAULT_EXPIRATION_REDIS);
 
+          }
+    
+          await redisClient.expire(eventKey, process.env.DEFAULT_EXPIRATION_REDIS);
         }
   
-        await redisClient.expire(eventKey, process.env.DEFAULT_EXPIRATION_REDIS);
     }));
     } catch (redisErr) {
       console.error("Redis Error storeEventsRedis:", redisErr);
@@ -165,8 +164,8 @@ export const storeEventsRedis = async (userId, events) =>{
 export const editEventRedis = async (userId, keyCachedEvents, updatedEvent) => {
     try {
       const cachedEvents = await redisClient.sMembers(keyCachedEvents);
-      console.log(updatedEvent)
-      console.log(updatedEvent.id)
+      //console.log(updatedEvent)
+      //console.log(updatedEvent.id)
       if (cachedEvents) {
         if(!cachedEvents.includes(updatedEvent.id)){
           //await restoreEventsRedis(userId)
@@ -189,7 +188,7 @@ export const editEventRedis = async (userId, keyCachedEvents, updatedEvent) => {
 export const addCollaboratorsEvent = async (userId, keyCachedEvents, eventId, collaboratorIds) => {
   try {
     const cachedEvents = await redisClient.sMembers(keyCachedEvents);
-    console.log(collaboratorIds)
+    //console.log(collaboratorIds)
 
     if (cachedEvents) {
       if(!cachedEvents.includes(eventId)){
@@ -201,8 +200,8 @@ export const addCollaboratorsEvent = async (userId, keyCachedEvents, eventId, co
       const ownerKey = `user:${userId}:collaborators`;
 
       await Promise.all(collaboratorIds.map(async (collaboratorId)=>{
-        console.log(collaboratorId)
-        console.log(userId)
+        //console.log(collaboratorId)
+        //console.log(userId)
 
         await redisClient.sAdd(eventKey, collaboratorId);
         // owner event add collaborator if not exist 
