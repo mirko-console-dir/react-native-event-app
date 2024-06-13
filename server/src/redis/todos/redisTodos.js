@@ -2,8 +2,6 @@ import mongoose from "mongoose";
 import redisClient from "../redisClient.js";
 import {eventHasTodoRedis, restoreEventsRedis} from "../events/redisEvents.js"
 
-const DEFAULT_EXPIRATION = 3600  // 1 HOURS
-
 // not need to get from server is already taking when I get the events and populate with the todos 
 //export const getServerEventTodos = async (userId) => {
 
@@ -60,7 +58,7 @@ export const storeTodosRedis = async (eventId, todos) =>{
             if (!eventListTodoExists) {
               // if the key exists is gonna create and add otherwise is gonna add
               await redisClient.sAdd(eventTodosKey, todoId);
-              await redisClient.expire(eventTodosKey, DEFAULT_EXPIRATION);
+              await redisClient.expire(eventTodosKey, process.env.DEFAULT_EXPIRATION_REDIS);
               
               const todoKey = `todo:${todoId}`;
               const todoKeyExists = await redisClient.exists(todoKey);
@@ -81,10 +79,10 @@ export const storeTodosRedis = async (eventId, todos) =>{
                         if(commentKeyExist){
                           await redisClient.hSet(commentKey, 'commentText', comment.commentText);
                           await redisClient.hSet(commentKey, 'author', comment.author._id.toString());
-                          await redisClient.expire(commentKey, DEFAULT_EXPIRATION);
+                          await redisClient.expire(commentKey, process.env.DEFAULT_EXPIRATION_REDIS);
                         }
                     })
-                    await redisClient.expire(todoCommentsKey, DEFAULT_EXPIRATION);
+                    await redisClient.expire(todoCommentsKey, process.env.DEFAULT_EXPIRATION_REDIS);
                 }
     
                 if (todo.images && todo.images.length > 0) {
@@ -97,16 +95,16 @@ export const storeTodosRedis = async (eventId, todos) =>{
                       if(!imageKeyExists){
                         await redisClient.hSet(imageKey, 'caption', image.caption);
                         await redisClient.hSet(imageKey, 'imageName', image.imageName);
-                        await redisClient.expire(imageKey, DEFAULT_EXPIRATION);                      
+                        await redisClient.expire(imageKey, process.env.DEFAULT_EXPIRATION_REDIS);                      
                       }
                   })
-                  await redisClient.expire(todoImageKey, DEFAULT_EXPIRATION);
+                  await redisClient.expire(todoImageKey, process.env.DEFAULT_EXPIRATION_REDIS);
                 }  
-                await redisClient.expire(todoKey, DEFAULT_EXPIRATION);
+                await redisClient.expire(todoKey, process.env.DEFAULT_EXPIRATION_REDIS);
               }
             }
         }));
-        await redisClient.expire(eventTodosKey, DEFAULT_EXPIRATION);
+        await redisClient.expire(eventTodosKey, process.env.DEFAULT_EXPIRATION_REDIS);
     } catch (redisErr) {
       console.error("Redis Error storeEventTodosRedis:", redisErr);
     } 
@@ -207,13 +205,13 @@ export const addTodoCommentRedis = async (userId, todoId, comment) => {
     const todoCommentsKey = `todo:${todoId}:comments`;
     // update todo comments list redis
     await redisClient.sAdd(todoCommentsKey, comment._id.toString());
-    await redisClient.expire(todoCommentsKey, DEFAULT_EXPIRATION);
+    await redisClient.expire(todoCommentsKey, process.env.DEFAULT_EXPIRATION_REDIS);
 
     // add redis comment
     const commentKey = `comment:${comment._id.toString()}`;
     await redisClient.hSet(commentKey, 'commentText', comment.commentText);
     await redisClient.hSet(commentKey, 'author', comment.author._id.toString());
-    await redisClient.expire(commentKey, DEFAULT_EXPIRATION);
+    await redisClient.expire(commentKey, process.env.DEFAULT_EXPIRATION_REDIS);
   } catch (error) {
     console.error('Error addTodoComment redis',error);
 

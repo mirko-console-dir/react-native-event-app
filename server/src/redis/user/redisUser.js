@@ -1,8 +1,6 @@
 import redisClient from "../redisClient.js";
 import { User } from "../../models/User.js";
 
-const DEFAULT_EXPIRATION = 3600  // 1 HOURS
-
 export const checkUserExist = async (userId) => {
     const userKey = `user:${userId}`
     const exists = await redisClient.exists(userKey);
@@ -24,7 +22,7 @@ export const storeUser = async (user) => {
             const avatarBase64 = user.avatar.toString('base64');
             await redisClient.hSet(key, 'avatar', avatarBase64);
         }
-        await redisClient.expire(key, DEFAULT_EXPIRATION);
+        await redisClient.expire(key, process.env.DEFAULT_EXPIRATION_REDIS);
     } catch (redisErr) {
         console.error("Redis Error storeUser:", redisErr);
     }
