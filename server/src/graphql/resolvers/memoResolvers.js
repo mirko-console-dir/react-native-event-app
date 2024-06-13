@@ -1,6 +1,6 @@
 import { Memo } from "../../models/Memo.js";
 import redisClient from "../../redis/redisClient.js";
-import {getServerMemos, storeMemosRedis, getMemosRedis, editMemoRedis, deleteMemoRedis} from "../../redis/memos/redisMemos.js"
+import {getServerMemos, storeMemosRedis, getRedisMemos, editMemoRedis, deleteMemoRedis} from "../../redis/memos/redisMemos.js"
 
 
 export default {
@@ -15,7 +15,7 @@ export default {
             let memos = [];
                       
             // Try to get memos from Redis
-            memos = await getMemosRedis(key)
+            memos = await getRedisMemos(key)
             // END try in redis
             // if not in cache get from server
             if(!memos.length){
@@ -110,8 +110,7 @@ export default {
                   console.log(`Memo with ID ${id} deleted successfully`);
 
                   // redis
-                  const keyCachedMemos = `user:${contextValue.user._id}:memos`;
-                  await deleteMemoRedis(contextValue.user._id, keyCachedMemos, id);
+                  await deleteMemoRedis(contextValue.user._id, id);
                   // END redis
 
                   return true;

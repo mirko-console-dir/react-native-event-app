@@ -6,6 +6,8 @@ import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET, MODE } from '../../config/index.js'
 import sharp from 'sharp'
+import { checkUserExist } from "../../redis/user/redisUser.js";
+import redisClient from "../../redis/redisClient.js";
 
 export default {
   Query: {
@@ -30,7 +32,7 @@ export default {
         // Image upload
         let buffer = null
         if(avatar){
-          const bufferClient = Buffer.from(avatar.data);
+          const bufferClient = Buffer.from(avatar.data, 'base64');
    
           buffer = await sharp(bufferClient)
             .resize({ height: 50, width: 50, fit: 'cover' })
@@ -83,6 +85,14 @@ export default {
         // save user
         await newUser.save();
 
+        // redis cache
+        // Check if the user key already exists
+        const userKey = `user:${user._id}`
+        const exists = await redisClient.exists(userKey);
+        if (!exists) {
+          await checkUserExist(user)
+        }  
+        // END redis cache
 
         return {
           accessToken,
@@ -122,6 +132,16 @@ export default {
                 REFRESH_TOKEN_SECRET,
                 { expiresIn: '7d' }
             );
+           
+            // redis cache
+            // Check if the user key already exists
+            const userKey = `user:${user._id}`
+            const exists = await redisClient.exists(userKey);
+            if (!exists) {
+              await checkUserExist(user)
+            }  
+            // END redis cache
+          
 
             // Save the refresh token in the database
             // overwrite the oldone in refreshtokens collection

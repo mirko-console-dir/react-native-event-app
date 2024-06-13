@@ -39,13 +39,13 @@ export const storeMemosRedis = async (userId, memos) =>{
   } 
 }
   
-export const getMemosRedis = async (key) =>{
+export const getRedisMemos = async (key) =>{
   let memos = null;
   try {
     const cachedMemos = await redisClient.sMembers(key);
     if (cachedMemos) {
-      console.log('Memos from Redis');
-      console.log(cachedMemos);
+      //console.log('Memos from Redis');
+      //console.log(cachedMemos);
       memos = await Promise.all(cachedMemos.map(async memoId => {
         const memo = await redisClient.hGetAll(`memo:${memoId}`);
         memo.id = memoId;
@@ -85,7 +85,8 @@ export const editMemoRedis = async (userId, keyCachedMemos, updatedMemo) => {
   }
 }
   
-export const deleteMemoRedis = async (userId, keyCachedMemos, deletedMemoId) => {
+export const deleteMemoRedis = async (userId, deletedMemoId) => {
+  const keyCachedMemos = `user:${userId}:memos`;
   const cachedMemos = await redisClient.sMembers(keyCachedMemos);
   try {
     if (cachedMemos) {
@@ -93,6 +94,7 @@ export const deleteMemoRedis = async (userId, keyCachedMemos, deletedMemoId) => 
         await restoreMemosRedis(userId)
         return;
       }
+      await redisClient.sRem(keyCachedMemos, deletedMemoId);
 
       const memoKey = `memo:${deletedMemoId}`;
       await redisClient.del(memoKey);
@@ -105,7 +107,7 @@ export const deleteMemoRedis = async (userId, keyCachedMemos, deletedMemoId) => 
   }
 }
   
-export const restoreMemosRedis = async (userId) => {
+const restoreMemosRedis = async (userId) => {
   try {
    // case if the memos are expired in cache, reload them in cache
    const memos = await getServerMemos(userId);

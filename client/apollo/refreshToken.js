@@ -33,6 +33,7 @@ const refreshToken = async () => {
         } else {
             throw new Error('No access token found in the response');
         }
+        
     } catch (error) {
         console.error('Failed to refresh token or token expired:', error.message);
         return false

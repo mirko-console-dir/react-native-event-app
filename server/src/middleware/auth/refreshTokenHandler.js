@@ -2,6 +2,8 @@ import jwt from 'jsonwebtoken';
 import { User } from '../../models/User.js';
 import { RefreshToken } from '../../models/RefreshToken.js'; // Ensure you import the RefreshToken model
 import { ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET } from '../../config/index.js';
+import { checkUserExist } from '../../redis/user/redisUser.js';
+import redisClient from '../../redis/redisClient.js';
 
 export const refreshTokenHandler = async (req, res) => {
     const authHeader = req.headers.authorization;
@@ -49,7 +51,16 @@ export const refreshTokenHandler = async (req, res) => {
     const user = await User.findOne({ _id: payload._id });
 
     if (!user) return res.status(401).send({ accessToken: '' });
-      
+    
+    // redis cache
+    // Check if the user key already exists
+    const userKey = `user:${user._id}`
+    const exists = await redisClient.exists(userKey);
+    if (!exists) {
+      await checkUserExist(user)
+    }  
+    // END redis cache
+
     const accessToken = jwt.sign(
       { _id: user._id, fullname: user.fullname, email: user.email },
       ACCESS_TOKEN_SECRET,

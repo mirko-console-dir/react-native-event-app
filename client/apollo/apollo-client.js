@@ -12,6 +12,8 @@ import { BASE_URL as ENV_BASE_URL, WEBSOCKET_LINK_PROTOCOL as ENV_WEBSOCKET_LINK
 // Auth Link for setting the headers with the token
 const authLink = setContext(async (_, { headers }) => {
   const token = await SecureStore.getItemAsync('userAccessToken');
+  console.log('Authorization Token:', token);
+
   return {
       headers: {
           ...headers,
@@ -31,10 +33,10 @@ const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) =
           });
         //END log error
 
-        graphQLErrors.map(async ({ extensions }) => {
+        graphQLErrors.map(async ({ message,extensions }) => {
           const errorCode = extensions?.code;
-          console.log('errorCode');
-          console.log(errorCode);
+          //console.log('errorCode');
+          //console.log(errorCode);
 
           if (errorCode === 'UNAUTHENTICATED') {
             try {
@@ -71,6 +73,9 @@ const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) =
           if(errorCode === 'COLLABORATOR_EMAIL_SAME_AS_USER_EMAIL'){
             Alert.alert(extensions.stacktrace[0])
           }
+          if(errorCode === 'USER_IS_NOT_AUTHORIZED_COMMENT'){
+            Alert.alert(message)
+          }
         });
       }
       if (networkError) {
@@ -102,8 +107,8 @@ const wsLink = new GraphQLWsLink(createClient({
     connected: () => console.log("connected client"),
     closed: () => console.log("closed"),
     error: (err) => {
-      console.log("error: " + err.message)
-      console.log("error: " + err.code)
+      console.log("error wsLink apollo client: " + err.message)
+      console.log("error wsLink apollo client: " + err.code)
     },
   },
 }));

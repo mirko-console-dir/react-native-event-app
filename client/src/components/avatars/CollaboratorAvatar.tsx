@@ -9,15 +9,24 @@ const CollaboratorAvatar = ({ collaborator, style }: any  ) => {
     <circle cx="12" cy="9" r="3"></circle>
     </svg>`;
     // Check if the collaborator has an avatar
+    //console.log(collaborator)
+
     if (collaborator.avatar != null) {
+      //console.log(collaborator.avatar)
       // Decode avatar data using createFromBase64
-      const decodedAvatar = btoa(
-        String.fromCharCode( ...new Uint8Array(collaborator.avatar.data))
-      ) 
+      let decodedAvatar
+      if(collaborator.avatar.data){
+        decodedAvatar = btoa(
+          String.fromCharCode( ...new Uint8Array(collaborator.avatar.data))
+        ) 
+      } else {
+        decodedAvatar = collaborator.avatar
+      }
+
       return (
         <Image
-            source={{ uri: `data:image/png;base64,${decodedAvatar}` }}
-            style={style}
+          source={{ uri: `data:image/png;base64,${decodedAvatar}` }}
+          style={{ width: 30,height: 30, borderRadius: 50 }}
         />
       );
     }

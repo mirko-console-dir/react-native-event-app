@@ -12,7 +12,7 @@ import {
   Image,
   ActivityIndicator
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import * as SecureStore from 'expo-secure-store';
@@ -66,37 +66,32 @@ const SignUp = () => {
     setModalVisible(false);
   };
   // End avatar 
-
   const [createUser, { error, loading }] = useMutation(CREATE_USER, {
-    onCompleted: (data) => {
+    onCompleted: async (data) => {
       if (data.createUser.accessToken && data.createUser.refreshToken) {
-         //avatar image
-        if(data.createUser.user.avatar?.data){
-          AsyncStorage.removeItem('avatar')
-          const image = btoa(
-            String.fromCharCode( ...new Uint8Array(data.createUser.user.avatar.data))
-          ) 
-          AsyncStorage.setItem('avatar', image)
-        } else {
-          AsyncStorage.removeItem('avatar')
-        }
-
-        dispatch(setUser(data.createUser.user));
-        /* restore client cache to run the query again */
-        client.resetStore();
-
         // Save the tokens in SecureStore
-        SecureStore.setItemAsync('userAccessToken', data.createUser.accessToken)
-          .then(() => SecureStore.setItemAsync('userRefreshToken', data.createUser.refreshToken))
-          .then(() => {
-            Alert.alert('Success', 'Logged In Successfully.');
-            navigation.navigate('Tabs', {screen: 'HomePage'})
+        await SecureStore.setItemAsync('userAccessToken', data.createUser.accessToken);
+        await SecureStore.setItemAsync('userRefreshToken', data.createUser.refreshToken);
+
+        // Clear and set user in AsyncStorage
+        await AsyncStorage.removeItem('user');
+        await AsyncStorage.setItem('user', JSON.stringify(data.createUser.user));
+
+        // Dispatch user to Redux store
+        dispatch(setUser(data.createUser.user));
+
+        // Reset the Apollo Client store
+        await client.clearStore();
+        await client.resetStore();
+
+
+        Alert.alert('Success', 'Logged In Successfully.');
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'Tabs' }],
           })
-          .catch((error) => {
-            // Handle errors saving the token here
-            console.log(error);
-            Alert.alert('An error occurred', 'Failed to save token');
-          });
+        );
       }
     },
   });

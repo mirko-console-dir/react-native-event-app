@@ -201,30 +201,34 @@ const ViewTodo = ({today}: StackProps) => {
                       }
                   </View>
                 </View>
-                <View style={[styles.viewTaskPage.main.comments]} >
-                  <Text style={[styles.h2, styles.textCenter]}>{todo?.comments?.length} Comments:</Text>
-                      <FlatList
-                        data={todo?.comments.slice().reverse()} //Create a copy with slice() and then reverse it, for TypeError: Cannot assign to read-only property
-                        keyExtractor={keyExtractorComment}
-                        renderItem={renderItemComment}    
-                        removeClippedSubviews={true}
-                        initialNumToRender={1}
-                      />
-                      <TodoItemMoreIconModal
-                        isVisible={todoModalVisibility}
-                        onClose={() => toggleActionsModal()}
-                        onEdit={() => {navigateEditTodo(todo)}}
-                        todoId={todo.id}
-                        todoContent={todo.content}
-                        projectId={todo.project}
-                      /> 
-                      <AddCommentModal 
-                        isVisible={isAddCommentModalVisible} 
-                        onClose={toggleCommentModal} 
-                        projectId={projectId} 
-                        todoId={todoId} 
-                      />
-                </View>
+                  <View style={[styles.viewTaskPage.main.comments]} >
+                    <Text style={[styles.h2, styles.textCenter]}>{todo?.comments?.length} Comments:</Text>
+                        {todo.comments && 
+                          <React.Fragment>
+                            <FlatList
+                              data={todo?.comments.slice().reverse()} //Create a copy with slice() and then reverse it, for TypeError: Cannot assign to read-only property
+                              keyExtractor={keyExtractorComment}
+                              renderItem={renderItemComment}    
+                              removeClippedSubviews={true}
+                              initialNumToRender={1}
+                            />
+                            <TodoItemMoreIconModal
+                              isVisible={todoModalVisibility}
+                              onClose={() => toggleActionsModal()}
+                              onEdit={() => {navigateEditTodo(todo)}}
+                              todoId={todo.id}
+                              todoContent={todo.content}
+                              projectId={todo.project}
+                            /> 
+                          </React.Fragment>
+                        }
+                        <AddCommentModal 
+                          isVisible={isAddCommentModalVisible} 
+                          onClose={toggleCommentModal} 
+                          projectId={projectId} 
+                          todoId={todoId} 
+                        />
+                  </View>
               </View>
             </View>
             <PlusButton onPress={toggleCommentModal}/>

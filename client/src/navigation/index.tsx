@@ -13,7 +13,7 @@ const Stack = createStackNavigator();
 const Navigation = () => {
 
     const {isLoggedIn,isAuthCheckComplete} = useAuth()
-    
+
     if (!isAuthCheckComplete) {
         return <SplashScreen />;
     } 

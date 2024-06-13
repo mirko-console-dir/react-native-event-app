@@ -16,6 +16,7 @@ import {WebSocketServer} from 'ws';
 import { useServer } from 'graphql-ws/lib/use/ws';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import redis from './redis/redisClient.js';
+import { checkUserExist } from './redis/user/redisUser.js';
 
 const DEFAULT_EXPIRATION = 3600  // 1 HOURS
 
@@ -130,18 +131,7 @@ async function startServer() {
             const user = !requiresAuthentication ? authenticateUser(req) : null;
             /* to make work the playground login first time than comment line above and decomment follow one */
             //const user = requiresAuthentication ? authenticateUser(req) : null;
-            if(user != null){
-                // redis cache 
-                try {
-                  const key = `user:${user._id}`;
-                  await redisClient.hSet(key, 'fullname', user.fullname);
-                  await redisClient.hSet(key, 'email', user.email);
-                  await redisClient.expire(key, DEFAULT_EXPIRATION);  
-                } catch (redisErr) {
-                  console.error("Redis Error:", redisErr);
-                } 
-                // END redis cache
-            }
+           
             const other = 'otherServiceMiddle(req)' // this just for example to show we can pass more stuff in the context
             return {user , other, req , res}
       },

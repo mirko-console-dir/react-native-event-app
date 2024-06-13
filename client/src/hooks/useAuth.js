@@ -24,16 +24,27 @@ if (!global.atob) {
 
 const useAuth = () => {
   const dispatch = useDispatch() 
-  const client = useApolloClient();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthCheckComplete, setIsAuthCheckComplete] = useState(false);
 
   useEffect(() => {
-    const checkAuthStatus = async () => {
+    const askFreshToken = async (token) => {
       try {
+        // Token is expired, attempt to refresh it
+        const newToken = await refreshToken(token);
+        if (newToken) {
+          setIsLoggedIn(true);
+          console.log('refreshToken')
+        }
+      } catch (error) {
+        console.error('Error refresh token client:', error);
+
+      }
+    }
+    const checkAuthStatus = async () => {
+      try {        
         // Get your token from SecureStore
         const token = await SecureStore.getItemAsync('userAccessToken');
-
         if (token) {
           let decodedToken;
           try {
@@ -41,43 +52,48 @@ const useAuth = () => {
           } catch (error) {
             console.error('Error decoding token:', error);
           }
+          console.log('arffsd')
 
           const expirationDate = new Date(decodedToken.exp * 1000);
 
           // Check if the token is still valid
           if (expirationDate > new Date()) {
             setIsLoggedIn(true);
+            console.log('expirationDate')
           } else {
-            // Token is expired, attempt to refresh it
-            const newToken = await refreshToken(token);
-
-            if (newToken) {
-              setIsLoggedIn(true);
-            }
+            askFreshToken(token)
           }
 
-          /* get user from async storage and dispatch to the redux store */
-          const user = await AsyncStorage.getItem('user');
+          const usr = await AsyncStorage.getItem('user')
 
-          const userLoggedIn = JSON.parse(user)
-
-          dispatch(setUser(userLoggedIn)); 
-          /* restore client cache to run the query again */
-          client.resetStore();
-
+          if (!usr){
+            askFreshToken(token)
+          }
         }
       } catch (error) {
         console.error('Error checking auth status:', error);
       } finally {
+        const user = await AsyncStorage.getItem('user')
+        if(!user) setIsLoggedIn(false)
         setIsAuthCheckComplete(true);
-
       }
     };
     // Run the authentication check only once when the component mounts
     checkAuthStatus();
   }, []);
 
-
+  useEffect(() => {
+    const fetchUser = async () => {
+        // Get user from async storage and dispatch to the redux store
+        const user = await AsyncStorage.getItem('user');
+        const userLoggedIn = JSON.parse(user);
+        dispatch(setUser(userLoggedIn));
+    };
+    if (isLoggedIn) {
+      fetchUser();
+    }
+  }, [isLoggedIn]);
+  
   return { isLoggedIn, isAuthCheckComplete };
 };
 

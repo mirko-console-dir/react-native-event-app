@@ -7,9 +7,43 @@ import getImagesFromS3 from "../../utils/getImagesFromS3.js";
 import { PubSub } from 'graphql-subscriptions'
 import { withFilter } from 'graphql-subscriptions'; // withFilter for subscription filtering
 
+import { ApolloError } from "apollo-server-express";
+
+import { storeTodosRedis, editTodoRedis, deleteTodoRedis, editCheckedStatusTodo, addTodoCommentRedis,deleteTodoCommentRedis,editTodoCommentRedis,deleteTodoImageRedis } from "../../redis/todos/redisTodos.js";
+import { updateEventStatus } from "../../redis/events/redisEvents.js";
+
 // functions that resolve specific query
 const pubsub = new PubSub()
 
+const checkUserAuthorizedAction = async (userId, todoId, commentId) => {
+    try {
+        const todoMatchComment = await Todo.findOne(
+            {
+              _id: todoId,
+              "comments._id": commentId,
+            },
+            {
+              "comments.$": 1, // Project only the specific comment
+            }
+        );
+          
+        if (!todoMatchComment) {
+          return new ApolloError("Todo or comment not found", "NOT_FOUND");
+        }
+        
+        const comment = todoMatchComment.comments[0]; // accesses the specific comment because the projection returns an array with a single element (the matching comment).
+    
+        const authorId = comment.author._id;
+          
+        if (userId != authorId) {
+            return false
+        }
+        return true
+    } catch (error) {
+        console.error('checkUserAuthorizedAction '+error);
+    }
+  
+}
 export default {
     Query: {
         hello: () => "Hello world!", 
@@ -45,11 +79,12 @@ export default {
             };
         },
         getTodoImages: async (_, { todoId }) => {
+
             const todo = await Todo.findById(todoId)
             if (!todo) throw new Error('No such todo')
 
             const imagesUrls = await getImagesFromS3(todo.images)
-            
+        
             console.log('========imagesUrls==============');
             console.log(imagesUrls);
             console.log('====================================');
@@ -73,7 +108,7 @@ export default {
                     expireDate: expireDate,
                     project: projectId,
                     checkedStatus: false,
-                    images: uploadedImages
+                    images: uploadedImages,
                 });
                 
                 await newTodo.save() // mongodb saving
@@ -92,6 +127,10 @@ export default {
                     },
                     userIdTriggedSub: contextValue.user._id,
                 });
+
+                // redis cache
+                await storeTodosRedis(projectId.toString(), [newTodo])
+                // END redis cache
 
                 // Save the updated Project
                 // return the id and the rest of the parameter texting _doc to show all the difference props
@@ -115,6 +154,7 @@ export default {
                     if (!todo) {
                         throw new Error('Todo not found');
                     }
+
                 // Delete the todo from the associated project
                 await Project.findByIdAndUpdate(
                     todo.project,
@@ -132,7 +172,7 @@ export default {
                 }
                 // Delete the todo from the database
                 const wasDeleted = (await Todo.deleteOne({ _id: ID })).deletedCount;
-                
+
                 pubsub.publish('TASK_DELETED', {
                     taskDeleted: {
                         projectId: todo.project,
@@ -140,15 +180,25 @@ export default {
                     },
                     userIdTriggedSub: contextValue.user._id,
                 });
-                  // Return true if the todo was deleted, false otherwise
+                // redis cache
+                await deleteTodoRedis(
+                    contextValue.user._id,
+                    todo.project.toString(), 
+                    todo.id.toString(), 
+                    todo.images.length ? todo.images.length : null, 
+                    todo.comments.length ? todo.comments.length : null, 
+                ) 
+                // END redis cache
 
+                  // wasDeleted return true if the todo was deleted, false otherwise
+               
                   return wasDeleted === 1;
                 } catch (error) {
                   // console.error(error);
                   throw new Error('Failed to delete the todo');
                 }
         },
-        editTodo: async (_, { todoId, input }) => {
+        editTodo: async (_, { todoId, input }, contextValue) => {
             const {content, expireDate, images} = input
             try {
                 let uploadedImages = []
@@ -164,7 +214,10 @@ export default {
                     },
                     { new: true }
                 );
-            
+                // redis cache
+                await editTodoRedis(contextValue.user._id,todo.project.toString(), todo)
+                // END redis cache
+
                 return true;
             } catch (error) {
                 console.error(error);
@@ -192,6 +245,9 @@ export default {
                         },
                         { new: true }
                     );
+                    // redis cache
+                    await updateEventStatus(contextValue.user._id,todo.project.toString(), 'Completed')
+                    // END redis cache
                 } else if (todosLenght > checkedTodos && checkedTodos !== 0) {
                     await Project.findByIdAndUpdate(
                         todo.project,
@@ -200,6 +256,9 @@ export default {
                         },
                         { new: true }
                     );
+                    // redis cache
+                    await updateEventStatus(contextValue.user._id,todo.project.toString(), 'In Progress')
+                    // END redis cache
                 } else {
                     await Project.findByIdAndUpdate(
                         todo.project,
@@ -208,6 +267,9 @@ export default {
                         },
                         { new: true }
                     );
+                    // redis cache
+                    await updateEventStatus(contextValue.user._id,todo.project.toString(), 'Pending')
+                    // END redis cache
                 }
 
                 pubsub.publish('TASK_CHECKED_STATUS', {
@@ -218,6 +280,9 @@ export default {
                     userIdTriggedSub: contextValue.user._id,
                 });
                 // END check if one of the todos is completed
+                // redis cache
+                await editCheckedStatusTodo(contextValue.user._id,todoId, input.checkedStatus.toString())
+                // END redis cache
                 return wasEdited === 1;
             } catch (error) {
                console.error(error);
@@ -258,6 +323,9 @@ export default {
                     },
                     userIdTriggedSub: user._id,
                 });
+                // redis cache
+                await addTodoCommentRedis(contextValue.user._id, todoId, storedComment);
+                // END redis cache
 
                 return storedComment;
             }catch (err) {
@@ -266,6 +334,10 @@ export default {
         },
         deleteCommentTodo: async (_,{ todoId, commentId },contextValue) => {
             try {
+                const isAuthorized = await checkUserAuthorizedAction(contextValue.user._id, todoId, commentId);
+                if(!isAuthorized) {
+                    return new ApolloError("You are not authorized to edit or delete other users' comments.", "USER_IS_NOT_AUTHORIZED_COMMENT");
+                }
                 const todo = await Todo.findByIdAndUpdate(
                   todoId,
                   {
@@ -285,6 +357,9 @@ export default {
                     },
                     userIdTriggedSub: contextValue.user._id,
                 });
+                  // redis cache
+                  await deleteTodoCommentRedis(contextValue.user._id, todoId, commentId);
+                  // END redis cache
                 return true
             } catch (error) {
                 console.error('Failed to delete comment', error);
@@ -293,6 +368,11 @@ export default {
         },
         editCommentTodo: async (_,{ todoId, commentId, input }, contextValue) => {
             try {
+                // if you are not author of the comment you cannot edit or delete
+                const isAuthorized = await checkUserAuthorizedAction(contextValue.user._id, todoId, commentId);
+                if(!isAuthorized) {
+                    return new ApolloError("You are not authorized to edit or delete other users' comments.", "USER_IS_NOT_AUTHORIZED_COMMENT");
+                }
                 const todo = await Todo.findOneAndUpdate(
                   {
                     _id: todoId,
@@ -319,6 +399,9 @@ export default {
                     },
                     userIdTriggedSub: contextValue.user._id,
                 });
+                // redis cache
+                await editTodoCommentRedis(contextValue.user._id, commentId, input.commentText)
+                // END redis cache
 
                 return true;
               } catch (error) {
@@ -327,7 +410,7 @@ export default {
                 throw new Error("Failed to edit comment");
               }
         },
-        deleteTaskImage: async (_,{ todoId, imageId, imageName }) => {
+        deleteTaskImage: async (_,{ todoId, imageId, imageName }, contextValue) => {
             try {
                 const todo = await Todo.findByIdAndUpdate(
                     todoId,
@@ -337,6 +420,10 @@ export default {
                     { new: true }
                   );
                 await deleteFromS3(imageName)
+                // redis cache
+                await deleteTodoImageRedis(contextValue.user._id, todoId, imageId)
+                // END redis cache
+
                 return true
             }catch(error){
                 console.error(error);
