@@ -1,15 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   SafeAreaView,
   View,
   TextInput,
   Text,
-  KeyboardAvoidingView,
-  Platform,
   Keyboard,
-  TouchableOpacity,
   TouchableWithoutFeedback,
-  useWindowDimensions,
   LayoutAnimation,
   ActivityIndicator
 } from 'react-native';
@@ -25,11 +21,11 @@ import { CREATE_PROJECT } from '../../../../apollo/mutations/project/projectMuta
 
 import DatePicker from 'react-native-modern-datepicker';
 import AskAddCollaboratorModal from '../../modals/project/AskAddCollaboratorModal';
-import AddCollaboratorsModal from '../../modals/project/AddCollaboratorsModal';
 
 import { useDispatch } from 'react-redux';
 import { addProject } from '../../../reduxReducers/projectSlice';
 import SaveButton from '../../buttons/SaveButton'
+import useNavigationOptions from '../../../hooks/useNavigationOptions';
 
 
 type StackProps = {
@@ -45,7 +41,7 @@ const CreateProject = ({today}: StackProps) => {
   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
   const navigation = useNavigation<any>();
-  const [selectedDate, setSelectedDate] = useState('')
+  const [selectedDate, setSelectedDate] = useState(null)
 
   const { control, handleSubmit, reset, formState: { errors }, setValue, setError,clearErrors } = useForm<InputTypes>();  
 
@@ -59,15 +55,17 @@ const CreateProject = ({today}: StackProps) => {
   }); 
 
   // Close keybord avoid conflict with data picker onChange and setValue form
-   
-  useEffect(()=>{
-    setValue('expireDate', selectedDate);
+  const handleDateSelected = (date: string) => {
+    date ?? setSelectedDate(date);
+    
+    setValue('expireDate', date);
     if(errors.expireDate){
       clearErrors("expireDate") 
     }
     Keyboard.dismiss();
-  },[selectedDate])
+  }
   // END Close keybord avoid conflict with data picker onChange and setValue form
+  
 
   const handleCreateProject = async (formData: InputTypes) => {
     const {title, expireDate} = formData
@@ -101,7 +99,7 @@ const CreateProject = ({today}: StackProps) => {
         projectTitle: newProject.title,
         expireDate: newProject.expireDate
       });  
-
+      resetValueForm()
 
     } catch (error) {
       console.error('Error creating todo list client:', error);
@@ -116,28 +114,20 @@ const CreateProject = ({today}: StackProps) => {
       navigation.navigate('TodoStack', {screen:'Create Task', params: { projectId: newProjectCreated.projectId, projectTitle: newProjectCreated.projectTitle, projectExpireDate: newProjectCreated.expireDate}})
     }
   }
- /*  const [collaboratorModal, setCollaboratorModal] = useState(false)
-  const toggleAddCollabModal = () =>{
-    setCollaboratorModal(!collaboratorModal)
-  } */
-  useEffect(() => {
-    reset({ title: '', expireDate: newProjectCreated.expireDate })
-    clearErrors("title") 
-
-    if (newProjectCreated.projectId.length) {
-      toggleAskCollaboratorModal(''); 
-    } 
-  }, [newProjectCreated]);
   // END Ask if want to add collaborator 
+  const resetValueForm = () => {
+    reset({ title: '', expireDate: '' })
+    clearErrors("title") 
+    clearErrors("expireDate") 
+    setSelectedDate(null)
+    toggleAskCollaboratorModal(''); 
+  };
 
   const SaveButtonProject = () => (
       <SaveButton onPress={handleSubmit(handleCreateProject)}/>
   )
-  useEffect(()=>{
-    navigation.setOptions({
-      headerRight: SaveButtonProject,
-    })
-  }, [navigation])
+  useNavigationOptions({headerRight: SaveButtonProject});
+
 
   if(loading){
     return (
@@ -190,12 +180,12 @@ const CreateProject = ({today}: StackProps) => {
                           textFontSize: 15,
                           textHeaderFontSize: 15,
                         }}
-                        selected={selectedDate}
+                        selected={selectedDate ?? ''}
                         current={today}
                         mode="calendar"
                         minuteInterval={30}
                         style={{ borderRadius: 10, backgroundColor: 'transparent', borderWidth: 0.2, paddingTop: 7, paddingRight: 5,paddingLeft: 5 }}
-                        onDateChange={date => setSelectedDate(date)}
+                        onDateChange={date => handleDateSelected(date)}
                         projectsDate={[]}
                         todosDate={[]}
                       />

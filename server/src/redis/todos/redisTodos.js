@@ -72,11 +72,14 @@ export const storeTodosRedis = async (eventId, todos) =>{
                     const todoCommentsKey = `todo:${todoId}:comments`;
                     
                     todo.comments.forEach(async (comment) => {
-                        await redisClient.sAdd(todoCommentsKey, comment._id.toString());
+              
+                        let commentId = comment._id.toString();
 
-                        let commentKey = `comment:${comment._id.toString()}`
+                        await redisClient.sAdd(todoCommentsKey, commentId);
+
+                        let commentKey = `comment:${commentId}`
                         const commentKeyExist = await redisClient.exists(commentKey);
-                        if(commentKeyExist){
+                        if(!commentKeyExist){
                           await redisClient.hSet(commentKey, 'commentText', comment.commentText);
                           await redisClient.hSet(commentKey, 'author', comment.author._id.toString());
                           await redisClient.expire(commentKey, process.env.DEFAULT_EXPIRATION_REDIS);
@@ -88,9 +91,9 @@ export const storeTodosRedis = async (eventId, todos) =>{
                 if (todo.images && todo.images.length > 0) {
                   const todoImageKey = `todo:${todoId}:images`;
                   todo.images.forEach(async (image) => {
-                      const imageId = image._id.toString();
+                      let imageId = image._id.toString();
                       await redisClient.sAdd(todoImageKey, imageId);
-                      const imageKey = `image:${imageId}`;
+                      let imageKey = `image:${imageId}`;
                       const imageKeyExists = await redisClient.exists(imageKey);
                       if(!imageKeyExists){
                         await redisClient.hSet(imageKey, 'caption', image.caption);

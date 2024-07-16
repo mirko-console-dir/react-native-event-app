@@ -1,4 +1,4 @@
-import React, {useMemo, useState,useRef}from 'react';
+import React, { useState }from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet,ScrollView } from 'react-native';
 import Modal from "react-native-modal";
 import { useForm, Controller } from 'react-hook-form';
@@ -16,28 +16,26 @@ interface CommentModalProps {
   projectId: string;
   onClose: () => void;
   commentItem: any;
-  mode: string,
 }
 interface InputTypes {
     commentText: string
 }
-const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoId, onClose, commentItem, mode }) => { 
-    const [commentMode, setCommentMode] = useState(mode)
+const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoId, onClose, commentItem }) => { 
+    const initialState = 'view'
+    const [commentMode, setCommentMode] = useState(initialState)
+    console.log('comment item', commentItem)
 
-    const [comment, setComment] = useState(commentItem)
-
+    const closeModal = () => {
+        setCommentMode(initialState)
+        onClose()
+    }
+    
     const { control, handleSubmit, reset, formState: { errors }, setValue, setError,clearErrors } = useForm<InputTypes>({
         defaultValues: {
             commentText: commentItem.commentText,
         }
-      });   
+    });   
 
-    /* useEffect(() => {
-        setCommentMode(mode)
-    },[mode]) */
-    useMemo(() => setCommentMode(mode) , [mode]);
-
-    
 
     /* Edit Comment */
     const [editCommentTodo] = useMutation(EDIT_COMMENT_TODO);
@@ -50,7 +48,7 @@ const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoI
                 const { data } = await editCommentTodo({
                     variables: {
                         todoId: todoId,
-                        commentId: comment.id,
+                        commentId: commentItem.id,
                         input: {
                             commentText: commentText
                         }
@@ -67,11 +65,11 @@ const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoI
             } catch(error) {
                 console.log('error edit comment ',error);
             } finally {
-                onClose()
+                closeModal()
             }
         } else {
             console.log('nothing edit');
-            onClose()
+            closeModal()
         }
     }
     /* End Edit Comment */
@@ -105,15 +103,14 @@ const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoI
         // Handle the error, e.g., show an error message
         } finally { // run the following code indipendently if success or error
           setModalConfirmDeleteVisible(false)
-          onClose()
+          closeModal()
         }
     }
     /* End Delete Comment */
-    const inputRef = useRef<TextInput>(null)
 
 
     return (
-        <Modal isVisible={isVisible} onBackdropPress={onClose}>
+        <Modal isVisible={isVisible} onBackdropPress={closeModal}>
             <AskConfirmationModal
                 isVisible={isModalConfirmDeleteVisible}
                 message={'Delete comment'}
@@ -162,7 +159,7 @@ const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoI
                     {commentMode == 'edit' ? 
                     <>
                         <TouchableOpacity
-                            style={[styles.btn, styles.cancelBtn]} onPress={onClose}
+                            style={[styles.btn, styles.cancelBtn]} onPress={closeModal}
                         >
                             <Text>Cancel</Text>
                         </TouchableOpacity>

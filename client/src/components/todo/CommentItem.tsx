@@ -14,27 +14,25 @@ interface CommentItemProps {
 const CommentItem: React.FC<CommentItemProps> = ({ item, todoId, projectId}) => {
 
     const [isVisibleCommentModal, setIsVisibleCommentModal] = useState(false)
-    const [commentModalMode, setCommentModalMode] = useState('')
-    const toggleCommentModal = (mode:string) =>{
-        setCommentModalMode(mode)
+
+    const toggleCommentModal = () =>{
         setIsVisibleCommentModal(!isVisibleCommentModal);
     }
 
     return (
         <>
             <TouchableWithoutFeedback onPress={()=>Keyboard.dismiss()}>
-                <TouchableOpacity onPress={()=>toggleCommentModal('view')}>
+                <TouchableOpacity onPress={()=> toggleCommentModal()}>
                     <View style={styles.viewTaskPage.main.comments.comment}>
                         <View style={styles.viewTaskPage.main.comments.comment.text}>
                             <Text numberOfLines={1} style={{lineHeight: 15}}>{item.commentText}</Text>
                         </View>
                         <CommentModal
                             isVisible={isVisibleCommentModal}
-                            onClose={() => toggleCommentModal('')}
+                            onClose={() => toggleCommentModal()}
                             commentItem={item}
                             todoId={todoId}
                             projectId={projectId}
-                            mode={commentModalMode}
                         /> 
                     </View>
                 </TouchableOpacity>
