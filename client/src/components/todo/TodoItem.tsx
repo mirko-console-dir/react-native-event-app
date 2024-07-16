@@ -1,4 +1,4 @@
-import React, {useState,useEffect} from 'react';
+import React, {useState } from 'react';
 import { View, Text, Dimensions, ImageBackground, TouchableOpacity, PanResponder, Animated, LayoutAnimation } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {editCheckedStatusTask, deleteTaskFromProject} from '../../reduxReducers/projectSlice'

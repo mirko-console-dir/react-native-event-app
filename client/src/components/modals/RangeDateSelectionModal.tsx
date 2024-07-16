@@ -1,7 +1,6 @@
-import React, {useEffect, useState}from 'react';
-import { View, Platform, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState}from 'react';
+import { View, Platform, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Modal from "react-native-modal";
-import { SafeAreaView } from 'react-native-safe-area-context';
 import DatePicker from 'react-native-modern-datepicker';
 
 interface RangeDateSelectionModalProps {

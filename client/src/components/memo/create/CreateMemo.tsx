@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   SafeAreaView,
   View,
@@ -22,6 +22,7 @@ import { CREATE_MEMO } from '../../../../apollo/mutations/memo/memoMutations';
 import { useMutation } from '@apollo/client';
 
 import SaveButton from '../../buttons/SaveButton'
+import useNavigationOptions from '../../../hooks/useNavigationOptions';
 
 interface InputTypes {
   title: string;
@@ -65,11 +66,8 @@ const CreateMemo = () => {
     const SaveButtonMemo = () => (
       <SaveButton onPress={handleSubmit(handleCreateMemo)}/>
     )
-    useEffect(()=>{
-      navigation.setOptions({
-        headerRight: SaveButtonMemo,
-      })
-    }, [navigation])
+    useNavigationOptions({headerRight: SaveButtonMemo});
+
 
     // END Save button
     if(loading){

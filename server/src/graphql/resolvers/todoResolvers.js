@@ -324,7 +324,7 @@ export default {
                     userIdTriggedSub: user._id,
                 });
                 // redis cache
-                await addTodoCommentRedis(contextValue.user._id, todoId, storedComment);
+                await addTodoCommentRedis(contextValue.user._id, todo.project.toString(),todoId, storedComment);
                 // END redis cache
 
                 return storedComment;

@@ -1,4 +1,4 @@
-import React, { useEffect,useState } from 'react';
+import React, { useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import {
   SafeAreaView,
@@ -25,6 +25,8 @@ import { EDIT_MEMO } from '../../../../apollo/mutations/memo/memoMutations';
 
 import ConfirmCompletedActionModal from '../../modals/ConfirmCompletedActionModal'
 import SaveButton from '../../buttons/SaveButton'
+import useNavigationOptions from '../../../hooks/useNavigationOptions';
+
 
 interface InputTypes {
   editedTitle: string;
@@ -99,11 +101,8 @@ const EditMemo = () => {
   const SaveButtonMemo = () => (
       <SaveButton onPress={handleSubmit(handleEditMemo)}/>
   )
-  useEffect(()=>{
-    navigation.setOptions({
-      headerRight: SaveButtonMemo,
-    })
-  }, [navigation])
+  useNavigationOptions({headerRight: SaveButtonMemo});
+
 
   if(loading){
     return (

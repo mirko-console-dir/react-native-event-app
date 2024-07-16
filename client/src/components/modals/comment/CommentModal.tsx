@@ -1,4 +1,4 @@
-import React, {useEffect, useState,useRef}from 'react';
+import React, {useMemo, useState,useRef}from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet,ScrollView } from 'react-native';
 import Modal from "react-native-modal";
 import { useForm, Controller } from 'react-hook-form';
@@ -30,10 +30,13 @@ const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoI
         defaultValues: {
             commentText: commentItem.commentText,
         }
-      });    
-    useEffect(() => {
+      });   
+
+    /* useEffect(() => {
         setCommentMode(mode)
-    },[mode])
+    },[mode]) */
+    useMemo(() => setCommentMode(mode) , [mode]);
+
     
 
     /* Edit Comment */

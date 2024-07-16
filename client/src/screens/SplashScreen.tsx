@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View,Text, ActivityIndicator } from 'react-native';
+import React from 'react';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 
 const SplashScreen = () => {
 

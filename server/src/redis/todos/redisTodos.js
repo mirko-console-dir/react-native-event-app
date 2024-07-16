@@ -193,7 +193,7 @@ export const editCheckedStatusTodo = async (userId, todoId, status) => {
     console.error('Error editCheckedStatusTodo redis',error);
   }
 }
-export const addTodoCommentRedis = async (userId, todoId, comment) => {
+export const addTodoCommentRedis = async (userId, eventId,todoId, comment) => {
   try {
     // check if redis is update
     const isRedisUpdate = await eventHasTodoRedis(userId, eventId,todoId)
