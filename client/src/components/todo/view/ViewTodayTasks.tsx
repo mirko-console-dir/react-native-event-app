@@ -1,42 +1,21 @@
-import React, {useEffect,useState} from 'react';
-import { SafeAreaView, View, Text, ImageBackground, FlatList, TouchableOpacity, ScrollView } from 'react-native';
-import { useNavigation,useFocusEffect } from '@react-navigation/native';
+import React from 'react';
+import { SafeAreaView, View, Text, FlatList } from 'react-native';
 import styles from '../../../styles';
-import { Asset } from 'expo-asset';
-import { Feather } from '@expo/vector-icons';
+
 import DatePicker from 'react-native-modern-datepicker';
-import { Project, Todo } from '../../../utils/interfaces/types';
+import { Todo } from '../../../utils/interfaces/types';
 import TaskItem from '../../todo/TodoItem'
 
-import { useSelector } from "react-redux";
-import { RootState } from '../../../../app/store';
+import useFilteredProjectsTodosByDate from '../../../hooks/useFilterProjectsTaksByDate'
+import useExtractExpDatesForCalendar from '../../../hooks/useExtractExpDatesForCalendar'
 
 type StackProps = {
   today: string; 
 };
 
 const ViewTodayTasks = ({today}: StackProps) => {
-  const navigation = useNavigation<any>();
-
-  const [selectedTasksByDate, setSelectedTasksByDate] = useState<Array<Todo>>([]);
-  const [todosDate, setTodosDate] = useState<any>([]);
-
-  const projects : any = useSelector((state: RootState) => state.projects.projects);
-  
-  useEffect(() => {
-    // Filter tasks for today 
-    const filteredTasksByDateSelected = projects.flatMap((project: Project) =>
-      project.todos?.filter((todo) => {return todo.expireDate == today})
-    );
-    setSelectedTasksByDate(filteredTasksByDateSelected);
-    // Extract expiration dates and updated todos state
-    const expirationDatesTodos = projects.flatMap((project: Project) =>
-      project.todos?.map((todo) => todo.expireDate)
-    );
-    setTodosDate(expirationDatesTodos);
-
-  },[projects]);
-
+  const {selectedTasksByDate} = useFilteredProjectsTodosByDate(today)
+  const {todosDate} = useExtractExpDatesForCalendar()
 
   // END to open the relative project modal 
 
