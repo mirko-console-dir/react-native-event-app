@@ -1,5 +1,5 @@
-import React, { useState,useEffect, useRef } from 'react';
-import { useRoute,useNavigation,useFocusEffect } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { useRoute,useNavigation } from '@react-navigation/native';
 import { SafeAreaView, Text, TextInput, TouchableOpacity, Image,Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback, View, Platform,ActivityIndicator,Alert } from 'react-native';
 import DatePicker from 'react-native-modern-datepicker';
 import styles from '../../../styles';
@@ -21,6 +21,7 @@ import ImagePickerModal from '../../modals/ImagePickerModal';
 import AskConfirmationModal from '../../modals/AskConfirmationModal';
 import ImagesCarouselModal from '../../modals/todo/ImagesCarouselModal';
 import SaveButton from '../../buttons/SaveButton'
+import useNavigationOptions from '../../../hooks/useNavigationOptions';
 
 type StackProps = {
   today: string; 
@@ -59,13 +60,12 @@ const EditTodo = ({today}: StackProps) => {
     }
   });    
   const [loadingImage,setLoadingImage] = useState<Boolean>(false)
-
-  const [editedExpireDate, setEditedExpireDate] = useState(todo.expireDate);
   
-  useEffect(() => {
-    setValue('expireDate', editedExpireDate);
+ 
+  const handleDateSelected = (date: string) => {
+    setValue('expireDate', date);
     Keyboard.dismiss();
-  },[editedExpireDate])
+  }
 
   const { data: { getTodoImages = [] } = {}, loading } = useQuery(GET_TODO_IMAGES, {
     variables: { todoId: todoId },
@@ -233,15 +233,10 @@ const EditTodo = ({today}: StackProps) => {
   const SaveButtonTask = () => (
     <SaveButton onPress={handleSubmit(handleSubmitEditTodo)}/>
   )
-  useEffect(()=>{
-    navigation.setOptions({
-      headerRight: SaveButtonTask,
-    })
-  }, [navigation])
+  useNavigationOptions({headerRight: SaveButtonTask});
   // END Save button
 
   
-
   if(loading || loadingImage){
       return (
           <View style={{flex:1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
@@ -370,11 +365,11 @@ const EditTodo = ({today}: StackProps) => {
                               textHeaderFontSize: 15,
                             }}
                             current={today}
-                            selected={editedExpireDate}
+                            selected={todo.expireDate}
                             mode="calendar"
                             minuteInterval={30}
                             style={{ borderRadius: 10, backgroundColor: 'transparent', borderWidth: 0.2, paddingTop: 7, paddingRight: 5,paddingLeft: 5 }}
-                            onSelectedChange={date => setEditedExpireDate(date)}
+                            onSelectedChange={date => handleDateSelected(date)}
                             projectsDate={[projectExpDate]}
                             todosDate={[todo.expireDate]}
                           />

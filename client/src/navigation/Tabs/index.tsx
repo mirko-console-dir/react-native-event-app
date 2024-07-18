@@ -109,7 +109,8 @@ const MemoStack: React.FC<{ currentScreenRef: React.MutableRefObject<string | nu
 
 const ProjectStack: React.FC<StackProps & { currentScreenRef: React.MutableRefObject<string | null> }> = ({ today, currentScreenRef }) => { 
   
-  return (<Stack.Navigator initialRouteName='Create Event' >
+  return (
+  <Stack.Navigator initialRouteName='Create Event' >
       <Stack.Screen name="Create Event" options={{headerTitleAlign: 'center'}}
        listeners={{
         focus: () => {
@@ -165,7 +166,28 @@ const ProjectStack: React.FC<StackProps & { currentScreenRef: React.MutableRefOb
     </Stack.Screen>
   </Stack.Navigator>)
 };
-
+const StatsProjectStack: React.FC<StackProps & { currentScreenRef: React.MutableRefObject<string | null> }> = ({ today, currentScreenRef }) => { 
+  return (
+    <Stack.Navigator initialRouteName='Status Event' >
+        <Stack.Screen name="Status Event" options={{headerTitleAlign: 'center'}}
+         listeners={{
+          focus: () => {
+            currentScreenRef.current = 'Status Event' 
+          },
+          blur: () => {
+            currentScreenRef.current = null;
+          },
+        }}
+        >
+          {() => <StatsProjects today={today}/>}
+        </Stack.Screen>
+      <Stack.Group screenOptions={{headerShown: false}}>
+        <Stack.Screen name="ProjectStack">
+          {() => <ProjectStack today={today} currentScreenRef={currentScreenRef}/>}
+        </Stack.Screen>
+      </Stack.Group>
+    </Stack.Navigator>)
+}
 const TodoStack: React.FC<StackProps & { currentScreenRef: React.MutableRefObject<string | null> }> = ({ today,currentScreenRef }) => (
   <Stack.Navigator initialRouteName='Create Task'>
     <Stack.Group>
@@ -302,7 +324,7 @@ const Tabs = () => {
               tabBarLabel: 'Stats',
             }}
           >
-            {() => <StatsProjects today={today}/>}
+            {() => <StatsProjectStack today={today} currentScreenRef={currentScreenRef}/>}
           </Tab.Screen>
           <Tab.Screen
             name={'ProfilePage'}

@@ -49,7 +49,6 @@ const StatsProjects = ({today}: StackProps) => {
   }, [projects]);
 
 
-
   const renderProjectItem =  ({item}: {item: Project}) => { 
     return <ProjectItemBox project={item} />;
   }

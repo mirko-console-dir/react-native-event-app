@@ -56,7 +56,7 @@ const ProjectItemMoreIconModal: React.FC<ProjectItemMoreIconModalProps> = ({ isV
 
   const editProject = () => {
     onClose()
-    navigation.navigate('Edit Event', {projectId: projectId}) 
+    navigation.navigate('ProjectStack', {screen: 'Edit Event', params: { projectId: projectId }})
   }
   
   return (

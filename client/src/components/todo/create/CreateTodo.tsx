@@ -1,4 +1,4 @@
-import React, { useEffect,useState } from 'react';
+import React, { useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -10,10 +10,9 @@ import {
   Keyboard,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  LayoutAnimation,
   ActivityIndicator
 } from 'react-native';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import DatePicker from 'react-native-modern-datepicker';
 
 import { useForm, Controller } from 'react-hook-form';
@@ -28,7 +27,9 @@ import { CREATE_TODO } from '../../../../apollo/mutations/todo/todoMutations';
 import ImagePickerModal from '../../modals/ImagePickerModal'; 
 import ImagesCarouselModal from '../../modals/todo/ImagesCarouselModal';
 import ConfirmCompletedActionModal from '../../modals/ConfirmCompletedActionModal';
+
 import SaveButton from '../../buttons/SaveButton'
+import useNavigationOptions from '../../../hooks/useNavigationOptions';
 
 type StackProps = {
   today: string; 
@@ -181,13 +182,15 @@ const CreateTodo = ({today}: StackProps) => {
     const closeKeybord = () => {
       Keyboard.dismiss()
     }
-    useEffect(()=>{
-      setValue('expireDate', selectedDate);
+    const handleDateSelected = (date: string) => {
+      date ?? setSelectedDate(date);
+      
+      setValue('expireDate', date);
       if(errors.expireDate){
         clearErrors("expireDate") 
       }
-      closeKeybord()
-    }, [selectedDate])
+      Keyboard.dismiss();
+    }
     // END Close keybord avoid conflict with data picker onChange
 
     /* const windowHeight = useWindowDimensions().height;
@@ -210,11 +213,8 @@ const CreateTodo = ({today}: StackProps) => {
     const SaveButtonTask = () => (
       <SaveButton onPress={handleSubmit(handleCreateTodo)}/>
     )
-    useEffect(()=>{
-      navigation.setOptions({
-        headerRight: SaveButtonTask,
-      })
-    }, [navigation])
+    useNavigationOptions({headerRight: SaveButtonTask});
+  
     // END Save button
     if(loading || loadingImage){
       return (
@@ -311,11 +311,11 @@ const CreateTodo = ({today}: StackProps) => {
                             textHeaderFontSize: 15,
                           }}
                           current={today}
-                          selected={selectedDate}
+                          selected={selectedDate ?? null}
                           mode="calendar"
                           minuteInterval={30}
                           style={{ borderRadius: 10, backgroundColor: 'transparent', borderWidth: 0.2, paddingTop: 7, paddingRight: 5,paddingLeft: 5 }}
-                          onSelectedChange={date => setSelectedDate(date)}
+                          onSelectedChange={date => handleDateSelected(date)}
                           projectsDate={[projectExpireDate]}
                           todosDate={[]}
                         />

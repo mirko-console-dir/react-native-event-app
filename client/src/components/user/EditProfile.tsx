@@ -1,12 +1,9 @@
-import React, {useState,useEffect} from 'react'
+import React, {useState} from 'react'
 import {
     SafeAreaView,
     View,
-    TouchableWithoutFeedback,
     TextInput,
-    Keyboard,
     Image,
-    Platform,
     Text, Dimensions, TouchableOpacity, ActivityIndicator
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
@@ -29,6 +26,7 @@ import {Ionicons,Feather} from '@expo/vector-icons'
 import ProfileAvatar from '../avatars/ProfileAvatar';
 import ImagePickerModal from '../../components/modals/ImagePickerModal'; 
 import SaveButton from '../buttons/SaveButton'
+import useNavigationOptions from '../../hooks/useNavigationOptions';
 
 interface InputTypes {
     fullname: string
@@ -105,12 +103,7 @@ const EditProfile = () => {
     const SaveButtonUser = () => (
         <SaveButton onPress={handleSubmit(handleEditUser)}/>
     )
-    useEffect(()=>{
-        navigation.setOptions({
-            headerRight: SaveButtonUser,
-        })
-    }, [navigation])
-  
+    useNavigationOptions({headerRight: SaveButtonUser});
     // END Save button
     if(loading){
         return (

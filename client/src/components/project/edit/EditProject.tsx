@@ -1,5 +1,5 @@
-import React, { useEffect,useState } from 'react';
-import { useRoute, useNavigation,useFocusEffect } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import {
   SafeAreaView,
   View,
@@ -7,7 +7,6 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
-  LayoutAnimation,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -32,6 +31,8 @@ import AddCollaboratorsModal from '../../modals/project/AddCollaboratorsModal';
 import AskConfirmationModal from '../../modals/AskConfirmationModal';
 import ConfirmCompletedActionModal from '../../modals/ConfirmCompletedActionModal';
 import SaveButton from '../../buttons/SaveButton'
+import useNavigationOptions from '../../../hooks/useNavigationOptions';
+
 import CollaboratorAvatar from '../../avatars/CollaboratorAvatar'
 
 type StackProps = {
@@ -59,12 +60,10 @@ const EditProject = ({today}: StackProps) => {
     }
   });  
 
-  const [selectedDate, setSelectedDate] = useState(project.expireDate);
-
-  useEffect(() => {
-    setValue('expireDate', selectedDate);
+  const handleDateSelected = (date: string) => {
+    setValue('expireDate', date);
     Keyboard.dismiss();
-  },[selectedDate])
+  }
 
   const [editProject] = useMutation(EDIT_PROJECT);
   const dispatch = useDispatch();
@@ -110,7 +109,7 @@ const EditProject = ({today}: StackProps) => {
   };
   // END Add Collaborator Modal
 
-  const ProjectViewActions = () => {
+  const ProjectEditActions = () => {
     return (
       <View style={styles.viewProjectPage.header.projectViewActions}>
           <TouchableOpacity onPress={toggleCollaboratorModal}>
@@ -120,11 +119,7 @@ const EditProject = ({today}: StackProps) => {
       </View>
     )
   }
-  useEffect(()=>{
-    navigation.setOptions({
-      headerRight: ProjectViewActions,
-    })
-  }, [navigation])
+  useNavigationOptions({headerRight: ProjectEditActions});
 
   /* CONFIRM ACTION MODAL */
   const [confirmActionModalVisible, setConfirmActionModalVisible] = useState(false)
@@ -258,7 +253,7 @@ const EditProject = ({today}: StackProps) => {
                           mode="calendar"
                           minuteInterval={30}
                           style={{ borderRadius: 10, backgroundColor: 'transparent', borderWidth: 0.2, paddingTop: 7, paddingRight: 5,paddingLeft: 5 }}
-                          onSelectedChange={date => setSelectedDate(date)}
+                          onSelectedChange={date => handleDateSelected(date)}
                           projectsDate={[project.expireDate]}
                           todosDate={[]}
                         />
