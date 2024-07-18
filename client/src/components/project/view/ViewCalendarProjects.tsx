@@ -1,4 +1,4 @@
-import React, {useEffect,useState} from 'react';
+import React, {useState} from 'react';
 import { SafeAreaView, View, Text, FlatList,TouchableOpacity } from 'react-native';
 import DatePicker from 'react-native-modern-datepicker';
 import { useNavigation,CommonActions } from '@react-navigation/native';
@@ -24,7 +24,6 @@ const ViewCalendarProjects = ({today}: StackProps) => {
   
   const { selectedProjectsByDate, selectedTasksByDate } = useFilteredProjectsTodosByDate(selectedDate);
   const { projectsDate, todosDate } = useExtractExpDatesForCalendar();
-
 
   const renderProjectItem =  ({item}: {item: Project}) => { 
     return <ProjectItemBox project={item} />;
