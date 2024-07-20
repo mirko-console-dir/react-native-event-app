@@ -1,5 +1,5 @@
 import React, { useState }from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet,ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet,ScrollView, Alert } from 'react-native';
 import Modal from "react-native-modal";
 import { useForm, Controller } from 'react-hook-form';
 
@@ -8,7 +8,7 @@ import { deleteCommentFromTask,updateCommentFromTask } from '../../../reduxReduc
 
 import { useMutation } from '@apollo/client';
 import { DELETE_COMMENT_TODO,EDIT_COMMENT_TODO } from '../../../../apollo/mutations/todo/todoMutations';
-import AskConfirmationModal from '../AskConfirmationModal'
+import { useToast } from '../../../utils/toastContext/ToastContext';
 
 interface CommentModalProps {
   isVisible: boolean;
@@ -20,10 +20,11 @@ interface CommentModalProps {
 interface InputTypes {
     commentText: string
 }
-const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoId, onClose, commentItem }) => { 
+const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoId, onClose, commentItem }) => {
+    const { success, error, warning } = useToast();
+
     const initialState = 'view'
     const [commentMode, setCommentMode] = useState(initialState)
-    console.log('comment item', commentItem)
 
     const closeModal = () => {
         setCommentMode(initialState)
@@ -43,44 +44,38 @@ const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoI
     
     const editComment = async (formData: InputTypes) => {
         const {commentText} = formData
-        if(commentText != commentItem.commentText) {
-            try {
-                const { data } = await editCommentTodo({
-                    variables: {
-                        todoId: todoId,
-                        commentId: commentItem.id,
-                        input: {
-                            commentText: commentText
-                        }
-                    },
-                });
-                if (data.editCommentTodo) {
-                    console.log('Comment edited successfully');
-                    console.log(data.editCommentTodo);
-                    dispatch(updateCommentFromTask({projectId:projectId, taskId: todoId, commentId: commentItem.id, commentText: commentText}))
-                } else {
-                    console.log('Failed to edit comment');
-                    // Handle the failure, e.g., show an error message
-                }
-            } catch(error) {
-                console.log('error edit comment ',error);
-            } finally {
-                closeModal()
-            }
-        } else {
-            console.log('nothing edit');
+        if(commentText == commentItem.commentText) return warning('Nothing to edit')
+
+
+        try {
+            const { data } = await editCommentTodo({
+                variables: {
+                    todoId: todoId,
+                    commentId: commentItem.id,
+                    input: {
+                        commentText: commentText
+                    }
+                },
+            });
+            dispatch(updateCommentFromTask({projectId:projectId, taskId: todoId, commentId: commentItem.id, commentText: commentText}))
+            success('Success')
+        } catch(err) {
+            error('Something Wrong in Comment')
+        } finally {
             closeModal()
-        }
+        }        
+       
     }
     /* End Edit Comment */
 
     /* Delete Comment */
     const [deleteCommentTodo] = useMutation(DELETE_COMMENT_TODO);
 
-    const [isModalConfirmDeleteVisible, setModalConfirmDeleteVisible] = useState(false);
-    const askConfirmDelete = () => {
-        setModalConfirmDeleteVisible(true)
-    }
+    const askConfirmDelete = (commentId: string) =>
+        Alert.alert('Delete Comment?', '', [
+          {text: 'Cancel', onPress: () => {}},
+          {text: 'OK', onPress: () => deleteComment(commentId)}
+        ]);
     const deleteComment = async (commentId: any) => {
         try {
             const { data } = await deleteCommentTodo({
@@ -89,20 +84,11 @@ const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoI
                 commentId: commentId,
                 },
             });
-
-            if (data.deleteCommentTodo) {
-                console.log('Comment deleted successfully');
-                console.log(data.deleteCommentTodo);
-                dispatch(deleteCommentFromTask({projectId: projectId, taskId: todoId, commentId: commentId}))
-            } else {
-                console.log('Failed to delete comment');
-                // Handle the failure, e.g., show an error message
-            }
-        } catch (error) {
-        console.error('Error deleting project:', error);
-        // Handle the error, e.g., show an error message
-        } finally { // run the following code indipendently if success or error
-          setModalConfirmDeleteVisible(false)
+            dispatch(deleteCommentFromTask({projectId: projectId, taskId: todoId, commentId: commentId}))
+            success('Success')
+        } catch (err) {
+            error('Error deleting Comment');
+        } finally { 
           closeModal()
         }
     }
@@ -111,12 +97,6 @@ const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoI
 
     return (
         <Modal isVisible={isVisible} onBackdropPress={closeModal}>
-            <AskConfirmationModal
-                isVisible={isModalConfirmDeleteVisible}
-                message={'Delete comment'}
-                onConfirm={() => deleteComment(commentItem.id)}
-                onCancel={() => setModalConfirmDeleteVisible(false)}
-            />
             <View style={styles.modalContent}>
                 <ScrollView style={styles.main} >
                     {commentMode == 'edit' ? 
@@ -171,7 +151,7 @@ const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoI
                     </>
                     :  
                     <>
-                        <TouchableOpacity style={[styles.btn, styles.deleteBtn]} onPress={askConfirmDelete}>
+                        <TouchableOpacity style={[styles.btn, styles.deleteBtn]} onPress={()=>askConfirmDelete(commentItem.id)}>
                             <Text>
                                 Delete
                             </Text> 

@@ -10,7 +10,8 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  Alert
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 
@@ -28,12 +29,11 @@ import { DELETE_COLLABORATOR_PROJECT } from '../../../../apollo/mutations/projec
 import styles from '../../../styles';
 import { Feather } from '@expo/vector-icons';
 import AddCollaboratorsModal from '../../modals/project/AddCollaboratorsModal';
-import AskConfirmationModal from '../../modals/AskConfirmationModal';
-import ConfirmCompletedActionModal from '../../modals/ConfirmCompletedActionModal';
 import SaveButton from '../../buttons/SaveButton'
 import useNavigationOptions from '../../../hooks/useNavigationOptions';
 
 import CollaboratorAvatar from '../../avatars/CollaboratorAvatar'
+import { useToast } from '../../../utils/toastContext/ToastContext';
 
 type StackProps = {
   today: string; // Declare the 'today' prop
@@ -43,16 +43,15 @@ interface InputTypes {
   expireDate: string;
 }
 const EditProject = ({today}: StackProps) => {
-  const route = useRoute();
+  const { success, error, warning } = useToast();
 
+  const route = useRoute();
   const { projectId } = route.params as any;
     
   const project: Project | any = useSelector((state: RootState) => {
     return state.projects.projects.find((project) => project.id === projectId);
   });
   
-  const navigation = useNavigation<any>();
-
   const { control, handleSubmit, formState: { errors }, setValue } = useForm<InputTypes>({
     defaultValues: {
       editedTitle: project.title,
@@ -70,8 +69,8 @@ const EditProject = ({today}: StackProps) => {
 
   const handleSubmitEditProject = async (formData: any) => {
     const {editedTitle, expireDate} = formData
+    if(project.title == editedTitle && project.expireDate == expireDate) return warning('Nothing to edit')
 
-    if(editedTitle != project.title || expireDate != project.expireDate) {
       try {
         const editedProject = await editProject({
           variables: {
@@ -85,17 +84,11 @@ const EditProject = ({today}: StackProps) => {
   
         dispatch(updateProject({projectId: editedProject.data.editProject.id, title: editedProject.data.editProject.title , expireDate: editedProject.data.editProject.expireDate}));
         
-        navigation.goBack() 
-      } catch (error) {
-        console.error('Error editing project:', error);
-        // Handle the error, e.g., show an error message
+        success('Success')
+      } catch (err) {
+        error('Something wrong')
       }
-    } else {
-      console.log('====================================');
-      console.log('nothing to change');
-      console.log('====================================');
-      navigation.goBack()
-    }
+   
   };
 
   // Add Collaborator Modal
@@ -121,16 +114,12 @@ const EditProject = ({today}: StackProps) => {
   }
   useNavigationOptions({headerRight: ProjectEditActions});
 
-  /* CONFIRM ACTION MODAL */
-  const [confirmActionModalVisible, setConfirmActionModalVisible] = useState(false)
-  const toggleConfirmActionModal = () => {
-   setConfirmActionModalVisible(!confirmActionModalVisible)
-  }
-  /*END  CONFIRM ACTION MODAL */
-  const [isModalConfirmDeleteVisible, setModalConfirmDeleteVisible] = useState(false);
-  const askConfirmDelete = () => {
-      setModalConfirmDeleteVisible(true)
-  }
+  const askConfirmDelete = (collaboratorId: string, nameCollaborator: string) =>
+    Alert.alert('Delete Collaborator?', `${nameCollaborator} will not be able to see the project and relative tasks`, [
+      {text: 'Cancel', onPress: () => {}},
+      {text: 'OK', onPress: () => deleteCollaborator(collaboratorId)}
+    ]);
+
   const [deleteCollaboratorProject] = useMutation(DELETE_COLLABORATOR_PROJECT);
 
   const deleteCollaborator = async (collaboratorId: string) => {
@@ -144,25 +133,15 @@ const EditProject = ({today}: StackProps) => {
       if(deletedCollaborator){
         dispatch(deleteCollaboratorFromProject({projectId:projectId,collaboratorId:collaboratorId}))
       }
-      toggleConfirmActionModal()
-    }catch(error){
-      console.log('====================================');
-      console.log(error);
-      console.log('====================================');
-    }finally{
-      setModalConfirmDeleteVisible(false)
+      success('Collaborator deleted')
+    }catch(err){
+      error('Something Wrong')
     }
   }
 
   const renderCollaborator = ({item}: any) => {
     return (
       <View style={{paddingVertical: 5,flexDirection:'row', justifyContent: 'space-between', alignItems: 'center'}}>
-            <AskConfirmationModal
-              isVisible={isModalConfirmDeleteVisible}
-              message={'Delete collaborator'}
-              onConfirm={() => deleteCollaborator(item.id)}
-              onCancel={() => setModalConfirmDeleteVisible(false)}
-            />
             <CollaboratorAvatar 
               collaborator={item} 
               style={{width: 30, height: 30, borderRadius: 50}}
@@ -171,7 +150,7 @@ const EditProject = ({today}: StackProps) => {
             <Text>{item.fullname}</Text>
             <Text>{item.email}</Text>
           </View>
-          <TouchableOpacity onPress={() => askConfirmDelete()}>
+          <TouchableOpacity onPress={() => askConfirmDelete(item.id, item.fullname)}>
             <Feather name={'trash-2'} size={20} color={'red'}/>
           </TouchableOpacity>
       </View>
@@ -180,9 +159,6 @@ const EditProject = ({today}: StackProps) => {
 
   return (
       <SafeAreaView style={{flex:1}}>
-            <ConfirmCompletedActionModal 
-              isVisible={confirmActionModalVisible} 
-              onClose={toggleConfirmActionModal} />
             <AddCollaboratorsModal 
               isVisible={isCollaboratorModalVisible} 
               onClose={toggleCollaboratorModal} 

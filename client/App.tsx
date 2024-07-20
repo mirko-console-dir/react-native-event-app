@@ -11,6 +11,21 @@ import client from './apollo/apollo-client';
 import Navigation from './src/navigation';
 import { LanguageProvider } from './src/utils/languages/LanguageProvider';
 import SubscriptionProvider from './src/utils/subscriptions/SubscriptionProvider'
+import { ToastProvider,useToast } from './src/utils/toastContext/ToastContext';
+import Toast from './src/components/toast/Toast';
+
+const AppContent: React.FC = () => {
+  const { toast } = useToast();
+  return (
+    <>
+      <NavigationContainer>
+        <Navigation />
+        <StatusBar style="auto" />
+        <Toast toast={toast} />
+      </NavigationContainer>
+    </>
+  );
+};
 
 export default function App() {
   return (
@@ -18,13 +33,12 @@ export default function App() {
       <Provider store={store}>
         <LanguageProvider>
           <SubscriptionProvider>
-            <NavigationContainer>
-              <Navigation />
-              <StatusBar style="auto" />
-            </NavigationContainer>
+            <ToastProvider>
+              <AppContent />
+            </ToastProvider>
           </SubscriptionProvider>
         </LanguageProvider>
       </Provider>
     </ApolloProvider>
   );
-} 
+}

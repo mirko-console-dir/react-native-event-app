@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SafeAreaView, View, Text, TouchableOpacity, LayoutAnimation,Dimensions } from 'react-native';
+import { SafeAreaView, View, Text, TouchableOpacity, LayoutAnimation,Dimensions, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 import styles from '../styles';
@@ -11,13 +11,15 @@ import { UserLoggedIn } from '../utils/interfaces/types';
 
 import ProfileAvatar from '../components/avatars/ProfileAvatar';
 import EditProfileBtn from '../components/buttons/EditProfileButton';
-import AskConfirmationModal from '../components/modals/AskConfirmationModal'
 
 import * as SecureStore from 'expo-secure-store';
 import { useLanguageContext } from "../utils/languages/LanguageProvider";
 import { useApolloClient } from '@apollo/client';
+import { useToast } from '../utils/toastContext/ToastContext';
 
 const Profile = () => {
+  const { success, error, warning } = useToast();
+
   const client = useApolloClient();
   const navigation = useNavigation<any>();
   const height = Dimensions.get('window').height
@@ -26,37 +28,29 @@ const Profile = () => {
   const user: UserLoggedIn | any = useSelector((state: RootState) => {
     return state.user.user
   });
-  console.log(user)
 
-  const [isModalConfirmSignOutVisible, setModalConfirmSignOutVisible] = useState(false);
-  const askConfirmSignOut = () => {
-      setModalConfirmSignOutVisible(true)
-  }
-
+ 
+  const askConfirmSignOut = () =>
+    Alert.alert('Log Out?', '', [
+      {text: 'Cancel', onPress: () => {}},
+      {text: 'OK', onPress: () => handleSignOut()}
+    ]);
   const handleSignOut = async () => {
-    setModalConfirmSignOutVisible(false)
     try {
       // Remove userAccessToken from SecureStore
       await AsyncStorage.removeItem('user')
       /* restore client cache to run the query again */
       await client.clearStore();
       await client.resetStore();
-    
+      success('Log out')
       navigation.navigate('SignIn'); 
-
-    } catch (error) {
-      console.error('Error while signing out:', error);
+    } catch (err) {
+      error('Error while signing out');
     }
   };
  
   return (
     <SafeAreaView style={{flex:1}}>     
-            <AskConfirmationModal
-                isVisible={isModalConfirmSignOutVisible}
-                message={'Log Out'}
-                onConfirm={handleSignOut}
-                onCancel={() => setModalConfirmSignOutVisible(false)}
-            />
       <View style={styles.profilePage}>
         <View style={styles.profilePage.container}>
           <View style={[styles.profilePage.header, {height: headerHeight}]}>

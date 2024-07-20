@@ -7,7 +7,8 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
   LayoutAnimation,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'
 
@@ -20,12 +21,13 @@ import { useMutation } from '@apollo/client';
 import { CREATE_PROJECT } from '../../../../apollo/mutations/project/projectMutations';
 
 import DatePicker from 'react-native-modern-datepicker';
-import AskAddCollaboratorModal from '../../modals/project/AskAddCollaboratorModal';
+import AddCollaboratorsModal from '../../modals/project/AddCollaboratorsModal';
 
 import { useDispatch } from 'react-redux';
 import { addProject } from '../../../reduxReducers/projectSlice';
 import SaveButton from '../../buttons/SaveButton'
 import useNavigationOptions from '../../../hooks/useNavigationOptions';
+import { useToast } from '../../../utils/toastContext/ToastContext';
 
 
 type StackProps = {
@@ -39,6 +41,7 @@ interface InputTypes {
 
 const CreateProject = ({today}: StackProps) => {
   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+  const { success,error : errorToast, warning } = useToast();
 
   const navigation = useNavigation<any>();
   const [selectedDate, setSelectedDate] = useState(null)
@@ -65,7 +68,20 @@ const CreateProject = ({today}: StackProps) => {
     Keyboard.dismiss();
   }
   // END Close keybord avoid conflict with data picker onChange and setValue form
-  
+  // Ask if want to add collaborator 
+  const [collaboratorModal, setCollaboratorModal] = useState(false)
+  const toggleAddCollabModal = () =>{
+    setCollaboratorModal(prev=> !prev)
+  }
+  const askCollaborator = () =>
+    Alert.alert('Add a Collaborator for the task?', 'Collaborate with other users', [
+      {text: 'Maybe Later', onPress: () => {
+        navigation.navigate('TodoStack', {screen:'Create Task', params: { projectId: newProjectCreated.projectId, projectTitle: newProjectCreated.projectTitle, projectExpireDate: newProjectCreated.expireDate}})
+        }
+      },
+      {text: 'OK', onPress: () => toggleAddCollabModal()}
+    ]);
+   // END Ask if want to add collaborator 
 
   const handleCreateProject = async (formData: InputTypes) => {
     const {title, expireDate} = formData
@@ -100,27 +116,20 @@ const CreateProject = ({today}: StackProps) => {
         expireDate: newProject.expireDate
       });  
       resetValueForm()
+      success('Event Created')
+      askCollaborator()
 
-    } catch (error) {
-      console.error('Error creating todo list client:', error);
+    } catch (err) {
+      errorToast('Error creating Event');
     }  
   };
 
-  // Ask if want to add collaborator 
-  const [askCollaboratorModal, setAskCollaboratorModal] = useState(false)
-  const toggleAskCollaboratorModal = (navigate : string) => {
-    setAskCollaboratorModal(!askCollaboratorModal)
-    if(navigate.length){
-      navigation.navigate('TodoStack', {screen:'Create Task', params: { projectId: newProjectCreated.projectId, projectTitle: newProjectCreated.projectTitle, projectExpireDate: newProjectCreated.expireDate}})
-    }
-  }
-  // END Ask if want to add collaborator 
+ 
   const resetValueForm = () => {
     reset({ title: '', expireDate: '' })
     clearErrors("title") 
     clearErrors("expireDate") 
     setSelectedDate(null)
-    toggleAskCollaboratorModal(''); 
   };
 
   const SaveButtonProject = () => (
@@ -196,18 +205,15 @@ const CreateProject = ({today}: StackProps) => {
                   </View>
                 </View>
               </View>
-            {/*   <AddCollaboratorsModal 
-                isVisible={collaboratorModal} 
-                onClose={()=>toggleAddCollabModal()} 
-                projectId={newProjectCreated?.projectId} 
-              /> */}
-              <AskAddCollaboratorModal 
-                isVisible={askCollaboratorModal}
-                projectId={newProjectCreated?.projectId} 
-                /* onConfirm={() => toggleAddCollabModal()} */
-                onConfirm={()=>null}
-                onCancel={() => toggleAskCollaboratorModal('go to create task')}
-              />
+              {newProjectCreated.projectId && 
+                <>
+                  <AddCollaboratorsModal 
+                    isVisible={collaboratorModal} 
+                    onClose={()=>{toggleAddCollabModal(),askCollaborator()}} 
+                    projectId={newProjectCreated?.projectId} 
+                  />
+                </>
+              }
             </View>
           </TouchableWithoutFeedback>
         </KeyboardAwareScrollView>

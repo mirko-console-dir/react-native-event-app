@@ -99,7 +99,6 @@ const ProjectItemBox = ({project}: {project: Project}) => {
             <ProjectItemMoreIconModal
                 isVisible={modalVisibility[project.id] || false}
                 onClose={() => closeModal(project.id)}
-                onDelete={() => null}
                 projectId={project.id}
                 projectTitle={project.title}
             />

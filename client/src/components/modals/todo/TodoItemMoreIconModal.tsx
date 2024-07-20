@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Alert } from 'react-native';
 import Modal from 'react-native-modal';
 import styles from '../../../styles';
-import { useNavigation } from '@react-navigation/native';
 import { useMutation } from '@apollo/client';
 import { DELETE_TODO } from '../../../../apollo/mutations/todo/todoMutations';
-import AskConfirmationModal from '../AskConfirmationModal'
 
 import { useDispatch } from 'react-redux';
 import { deleteTaskFromProject } from '../../../reduxReducers/projectSlice';
+import { useToast } from '../../../utils/toastContext/ToastContext';
 
 interface TodoItemMoreIconModalProps {
   isVisible: boolean;
@@ -21,15 +19,16 @@ interface TodoItemMoreIconModalProps {
 }
 
 const TodoItemMoreIconModal: React.FC<TodoItemMoreIconModalProps> = ({ isVisible, onClose, onEdit, todoId, todoContent, projectId }) => {
+  const { success, error, warning } = useToast();
 
   const [deleteTodoMutation] = useMutation(DELETE_TODO);
   const dispatch = useDispatch();
 
-  const [isModalConfirmDeleteVisible, setModalConfirmDeleteVisible] = useState(false);
-
-  const askConfirmDelete = () => {
-    setModalConfirmDeleteVisible(true);
-  };
+  const askConfirmDelete = () =>
+    Alert.alert('Delete Task?', '', [
+      {text: 'Cancel', onPress: () => {}},
+      {text: 'OK', onPress: () => deleteTodo()}
+    ]);
 
   const deleteTodo = async () => {
     try {
@@ -39,28 +38,17 @@ const TodoItemMoreIconModal: React.FC<TodoItemMoreIconModalProps> = ({ isVisible
         },
       });
 
-      if (data.deleteTodo) {
-        dispatch(deleteTaskFromProject({ projectId: projectId, taskId: todoId }));
-        onClose();
-      } else {
-        console.log('Failed to delete todo');
-        // Handle the failure, e.g., show an error message
-      }
-    } catch (error) {
-      console.error('Error deleting todo:', error);
-      // Handle the error, e.g., show an error message
+      dispatch(deleteTaskFromProject({ projectId: projectId, taskId: todoId }));
+      success('Task Deleted');
+    } catch (err) {
+      error('Error deleting Task');
+    }finally{
       onClose();
     }
   };
 
   return (
     <Modal isVisible={isVisible} onBackdropPress={onClose}>
-        <AskConfirmationModal
-          isVisible={isModalConfirmDeleteVisible}
-          message={'Delete task'}
-          onConfirm={() => deleteTodo()}
-          onCancel={() => setModalConfirmDeleteVisible(false)}
-        />
       <TouchableWithoutFeedback onPress={onClose}>
         <View style={modalStyles.centeredView}>
           <View style={modalStyles.modalView}>

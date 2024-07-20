@@ -99,7 +99,7 @@ const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) =
             Alert.alert('User already added')
           }
           if(errorCode === 'COLLABORATOR_EMAIL_NOT_EXIST'){
-            Alert.alert(extensions.stacktrace[0])
+            Alert.alert(`${extensions.stacktrace[0]} \n\nPlease check the email or ask to the new user to download the app and register \n\nThank you`)
           }
           if(errorCode === 'COLLABORATOR_EMAIL_SAME_AS_USER_EMAIL'){
             Alert.alert(extensions.stacktrace[0])

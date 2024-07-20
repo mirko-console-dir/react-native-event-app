@@ -17,6 +17,7 @@ import { ADD_COLLABORATOR_TO_PROJECT } from '../../../../apollo/mutations/projec
 
 import CollaboratorSelect from '../../project/CollaboratorSelect';
 import { UserLoggedIn,Project } from '../../../utils/interfaces/types';
+import { useToast } from '../../../utils/toastContext/ToastContext';
 
 interface AddCollaboratorsModalProps {
   isVisible: boolean;
@@ -27,6 +28,8 @@ interface InputTypes {
   collaboratorEmail: string;
 }
 const AddCollaboratorsModal: React.FC<AddCollaboratorsModalProps> = ({ isVisible, onClose, projectId }) => {
+  const { success, error } = useToast();
+
   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
   const userLoggedIn: UserLoggedIn | any = useSelector((state: RootState) => {
@@ -70,7 +73,6 @@ const AddCollaboratorsModal: React.FC<AddCollaboratorsModalProps> = ({ isVisible
           collaboratorEmails: !historyCollaborators ? [collaboratorEmail.toLowerCase().trim()]: collaboratorsEmailSelected,
         },
       });
-      // Handle the response data as needed
       //toggleConfirmActionModal()
       const collaborators = result.data.addCollaboratorToProject
       if(collaborators.length) {
@@ -80,10 +82,10 @@ const AddCollaboratorsModal: React.FC<AddCollaboratorsModalProps> = ({ isVisible
       reset()
       setCollaboratorsEmailSelected([])
       setHistoryCollaborators(false)
+      success('Collaborator added')
       onClose()
-    } catch (error) {
-      console.error(error);
-      // Handle the error (e.g., show an error message)
+    } catch (err) {
+      error(`Error adding Collaborator`)
     }
   };
   /* END Add collaborator manually */
