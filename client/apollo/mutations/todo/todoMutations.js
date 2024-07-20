@@ -9,6 +9,7 @@ export const CREATE_TODO = gql`
       images {
         imageName
       }
+      comments {commentText}
       checkedStatus
       project
     }

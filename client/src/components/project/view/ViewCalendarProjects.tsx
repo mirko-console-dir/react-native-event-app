@@ -1,4 +1,4 @@
-import React, {useEffect,useState} from 'react';
+import React, {useState} from 'react';
 import { SafeAreaView, View, Text, FlatList,TouchableOpacity } from 'react-native';
 import DatePicker from 'react-native-modern-datepicker';
 import { useNavigation,CommonActions } from '@react-navigation/native';
@@ -8,10 +8,11 @@ import ProjectItemBox from '../ProjectItem';
 import TaskItem from '../../todo/TodoItem'
 import {Feather} from '@expo/vector-icons'
 
-import { useSelector } from "react-redux";
-import { RootState } from '../../../../app/store';
 import { Project, Todo } from '../../../utils/interfaces/types';
-import PlusButton from '../../buttons/PlusButton';
+import useNavigationOptions from '../../../hooks/useNavigationOptions';
+import useFilteredProjectsTodosByDate from '../../../hooks/useFilterProjectsTaksByDate';
+import useExtractExpDatesForCalendar from '../../../hooks/useExtractExpDatesForCalendar';
+
 
 type StackProps = {
   today: string; 
@@ -20,42 +21,9 @@ type StackProps = {
 const ViewCalendarProjects = ({today}: StackProps) => {
   const navigation = useNavigation()
   const [selectedDate, setSelectedDate] = useState(today);
-  const [selectedProjectsByDate, setSelectedProjectsByDate] = useState<Array<Project>>([]);
-  const [selectedTasksByDate, setSelectedTasksByDate] = useState<Array<Todo>>([]);
   
-  const [projectsDate, setProjectsDate] = useState<any>([]);
-  const [todosDate, setTodosDate] = useState<any>([]);
-
-  const projects : any = useSelector((state: RootState) => state.projects.projects);
-
-  useEffect(() => {
-    // Filter projects for selected date
-    const filteredProjectByDateSelected = projects.filter((project: Project) => {
-      return project.expireDate === selectedDate
-    }); 
-  
-    setSelectedProjectsByDate(filteredProjectByDateSelected);
-    
-    const filteredTasksByDateSelected = projects.flatMap((project: Project) =>
-      project.todos?.filter((todo: Todo) => {return todo.expireDate == selectedDate})
-    );
-
-    setSelectedTasksByDate(filteredTasksByDateSelected);
-
-  },[selectedDate, projects]);
-
-  useEffect(() => {
-
-    // Extract expiration dates and update projectsDate and todos state
-    const expirationDatesProjects = projects.map((project: Project) => project.expireDate);
-    setProjectsDate(expirationDatesProjects);
-
-    const expirationDatesTodos = projects.flatMap((project: Project) =>
-      project.todos?.map((todo: Todo) => todo.expireDate)
-    );
-    setTodosDate(expirationDatesTodos);
-    
-  }, [projects]);
+  const { selectedProjectsByDate, selectedTasksByDate } = useFilteredProjectsTodosByDate(selectedDate);
+  const { projectsDate, todosDate } = useExtractExpDatesForCalendar();
 
   const renderProjectItem =  ({item}: {item: Project}) => { 
     return <ProjectItemBox project={item} />;
@@ -81,11 +49,7 @@ const ViewCalendarProjects = ({today}: StackProps) => {
       <Feather style={{alignSelf: 'center'}} name={"plus"} size={25}  color='black'/>
     </TouchableOpacity>
     )
-    useEffect(()=>{
-      navigation.setOptions({
-        headerRight: CreateEventButton,
-      })
-    }, [navigation])
+    useNavigationOptions({headerRight: CreateEventButton});
     // END Create button
   return (
     <SafeAreaView style={{flex:1}}>

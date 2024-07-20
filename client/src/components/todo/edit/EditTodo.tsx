@@ -1,5 +1,5 @@
-import React, { useState,useEffect, useRef } from 'react';
-import { useRoute,useNavigation,useFocusEffect } from '@react-navigation/native';
+import React, { useState } from 'react';
+import { useRoute,useNavigation } from '@react-navigation/native';
 import { SafeAreaView, Text, TextInput, TouchableOpacity, Image,Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback, View, Platform,ActivityIndicator,Alert } from 'react-native';
 import DatePicker from 'react-native-modern-datepicker';
 import styles from '../../../styles';
@@ -16,11 +16,11 @@ import { GET_TODO_IMAGES } from '../../../../apollo/queries/todo/todoQueries';
 import { EDIT_TODO } from '../../../../apollo/mutations/todo/todoMutations'; 
 import { DELETE_IMAGE_TODO } from '../../../../apollo/mutations/todo/todoMutations'; 
 
-import ConfirmCompletedActionModal from '../../modals/ConfirmCompletedActionModal';
 import ImagePickerModal from '../../modals/ImagePickerModal';
-import AskConfirmationModal from '../../modals/AskConfirmationModal';
 import ImagesCarouselModal from '../../modals/todo/ImagesCarouselModal';
 import SaveButton from '../../buttons/SaveButton'
+import useNavigationOptions from '../../../hooks/useNavigationOptions';
+import { useToast } from '../../../utils/toastContext/ToastContext';
 
 type StackProps = {
   today: string; 
@@ -37,8 +37,9 @@ interface ImageForm {
 
 
 const EditTodo = ({today}: StackProps) => {
+  const { success, error, warning } = useToast();
+
   const route = useRoute();
-  const navigation = useNavigation<any>();
   const dispatch = useDispatch();
 
   const { todoId, projectInfo } = route.params as { todoId: string; projectInfo: any};
@@ -59,13 +60,12 @@ const EditTodo = ({today}: StackProps) => {
     }
   });    
   const [loadingImage,setLoadingImage] = useState<Boolean>(false)
-
-  const [editedExpireDate, setEditedExpireDate] = useState(todo.expireDate);
   
-  useEffect(() => {
-    setValue('expireDate', editedExpireDate);
+ 
+  const handleDateSelected = (date: string) => {
+    setValue('expireDate', date);
     Keyboard.dismiss();
-  },[editedExpireDate])
+  }
 
   const { data: { getTodoImages = [] } = {}, loading } = useQuery(GET_TODO_IMAGES, {
     variables: { todoId: todoId },
@@ -88,13 +88,6 @@ const EditTodo = ({today}: StackProps) => {
     };
   }
   //END  Handle data to send image
-
-  /* CONFIRM ACTION MODAL */
-  const [confirmActionModalVisible, setConfirmActionModalVisible] = useState(false)
-  const toggleConfirmActionModal = () => {
-   setConfirmActionModalVisible(!confirmActionModalVisible)
-  }
-  /*END  CONFIRM ACTION MODAL */
   
   // Upload images
   const [isModalImagePickerVisible, setModalImgPickVisible] = useState(false);
@@ -142,10 +135,12 @@ const EditTodo = ({today}: StackProps) => {
   };
   // END Carousel Modal for attached images
   // Delete image 
-  const [isModalConfirmDeleteVisible, setModalConfirmDeleteVisible] = useState(false);
-  const askConfirmDelete = () => {
-      setModalConfirmDeleteVisible(true)
-  }
+  const askConfirmDelete = (todoId: string, imageId: string, imageName: string, index: number) =>
+    Alert.alert('Delete Image?', '', [
+      {text: 'Cancel', onPress: () => {}},
+      {text: 'OK', onPress: () => deleteImage(todoId, imageId, imageName, index)}
+    ]);
+
   const [deleteTaskImage] = useMutation(DELETE_IMAGE_TODO)
   const deleteImage = async (todoId: string, imageId: string, imageName: string, index:number) => {
     try {
@@ -156,15 +151,11 @@ const EditTodo = ({today}: StackProps) => {
           imageName: imageName
         },
       });
-      toggleConfirmActionModal()
       removeImage(index)
       dispatch(deleteImageFromTask({projectId: projectId, taskId: todoId, imageName: imageName}))
-    }catch(error){
-      console.log('====================================');
-      console.log(error);
-      console.log('====================================');
-    }finally{
-      setModalConfirmDeleteVisible(false)
+      success('Image removed')
+    }catch(err){
+      error('Cannot Remove Image')
     }
   }
   // END Delete image 
@@ -173,6 +164,8 @@ const EditTodo = ({today}: StackProps) => {
   const handleSubmitEditTodo = async (formData: InputTypes) => {
     const {editedContent, expireDate, newImages} = formData;
 
+    if(todo.content == editedContent || todo.expireDate == expireDate || newImages.length < 1) return warning('Nothing to change')
+
     let imageDataArray : any[] = []
     if(newImages.length){
       setLoadingImage(true)
@@ -180,7 +173,6 @@ const EditTodo = ({today}: StackProps) => {
       imageDataArray = await Promise.all(fetchImagePromises);
     } 
 
-    if(todo.content !== editedContent || todo.expireDate !== expireDate || newImages.length) {
       try {
         const editedTodo = await editTodo({
           variables: {
@@ -211,37 +203,21 @@ const EditTodo = ({today}: StackProps) => {
         dispatch(editTaskInProject({projectId: projectId, task: updatedTodo}))
         clearErrors("editedContent") 
         clearErrors("expireDate") 
-        reset()
-        toggleConfirmActionModal()
-        navigation.goBack()
-      } catch (error) {
-        console.log('=========ERROR==========');
-        console.error('Error editing todo:', error);
-        console.log('====================================');
-        // Handle the error, e.g., show an error message
+        success('Success')
+      } catch (err) {
+        error('Something wrong')
       } finally {
         setLoadingImage(false)
       }
-    } else {
-      console.log('==========handleSubmitEditTodo========');
-      console.log('Nothing to edit');
-      console.log('====================================');
-      navigation.goBack()
-    } 
   };
   // Save button
   const SaveButtonTask = () => (
     <SaveButton onPress={handleSubmit(handleSubmitEditTodo)}/>
   )
-  useEffect(()=>{
-    navigation.setOptions({
-      headerRight: SaveButtonTask,
-    })
-  }, [navigation])
+  useNavigationOptions({headerRight: SaveButtonTask});
   // END Save button
 
   
-
   if(loading || loadingImage){
       return (
           <View style={{flex:1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
@@ -251,7 +227,6 @@ const EditTodo = ({today}: StackProps) => {
   }
   return (
     <SafeAreaView style={{flex:1}}>
-            <ConfirmCompletedActionModal isVisible={confirmActionModalVisible} onClose={toggleConfirmActionModal}/>
             <ImagePickerModal isVisible={isModalImagePickerVisible} 
               onClose={toggleImagePickerModal} 
               onImageSelected={handleImageSelected}
@@ -294,14 +269,6 @@ const EditTodo = ({today}: StackProps) => {
                                 },
                               }}
                             />
-                        {/*  <TextInput
-                              placeholder="Content Task"
-                              value={editedContent}
-                              onChangeText={(text) => setEditedContent(text)}
-                              style={[styles.editTodoPage.main.form.inputContainer.input, styles.editTodoPage.main.form.inputContainer.inputContent, styles.editTodoPage.main.form.inputContainer.inputBigContent]}
-                              multiline={true}
-                              numberOfLines={3}
-                            /> */}
                             {allImages.length < 2 && 
                               <View style={[styles.editTodoPage.main.form.inputContainer.addImageContainer, styles.flexRowAllCenter]}>
                                   <TouchableOpacity onPress={toggleImagePickerModal}>
@@ -329,12 +296,6 @@ const EditTodo = ({today}: StackProps) => {
                                 {allImages?.map((image:any, index:any) => (
                                     <React.Fragment key={index}>
                                       <TouchableOpacity onPress={() => openCarouselModal(index)}>
-                                        <AskConfirmationModal
-                                          isVisible={isModalConfirmDeleteVisible}
-                                          message={'Delete image'}
-                                          onConfirm={() => deleteImage(todo.id, image.id, image.imageName, index)}
-                                          onCancel={() => setModalConfirmDeleteVisible(false)}
-                                        />
                                         <Image
                                             style={styles.viewTaskPage.main.details.images.tinyLogo}
                                             source={{
@@ -346,7 +307,7 @@ const EditTodo = ({today}: StackProps) => {
                                               <Feather name={'x-circle'} size={25} color={'red'}/>
                                           </TouchableOpacity>
                                         : 
-                                          <TouchableOpacity style={[styles.editTodoPage.main.form.imagesContainer.removeBtn, {padding: 5}]} onPress={() => askConfirmDelete()}>
+                                          <TouchableOpacity style={[styles.editTodoPage.main.form.imagesContainer.removeBtn, {padding: 5}]} onPress={() => askConfirmDelete(todo.id, image.id, image.imageName, index)}>
                                               <Feather name={'trash-2'} size={17} color={'red'}/>
                                           </TouchableOpacity>
                                         }
@@ -370,11 +331,11 @@ const EditTodo = ({today}: StackProps) => {
                               textHeaderFontSize: 15,
                             }}
                             current={today}
-                            selected={editedExpireDate}
+                            selected={todo.expireDate}
                             mode="calendar"
                             minuteInterval={30}
                             style={{ borderRadius: 10, backgroundColor: 'transparent', borderWidth: 0.2, paddingTop: 7, paddingRight: 5,paddingLeft: 5 }}
-                            onSelectedChange={date => setEditedExpireDate(date)}
+                            onSelectedChange={date => handleDateSelected(date)}
                             projectsDate={[projectExpDate]}
                             todosDate={[todo.expireDate]}
                           />

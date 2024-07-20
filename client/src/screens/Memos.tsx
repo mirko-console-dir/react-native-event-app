@@ -1,5 +1,5 @@
-import React, {useEffect,useState} from 'react';
-import { SafeAreaView, View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, {useState} from 'react';
+import { SafeAreaView, View, Text, TouchableOpacity, ScrollView, Button } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import styles from '../styles';
 import { Feather } from '@expo/vector-icons';
@@ -9,7 +9,9 @@ import { RootState } from '../../app/store';
 import { Memo } from '../utils/interfaces/types';
 import PlusButton from '../components/buttons/PlusButton';
 
+
 const Memos = () => {
+
   const navigation = useNavigation<any>();
 
   const memos : any = useSelector((state: RootState) => state.memos.memos);

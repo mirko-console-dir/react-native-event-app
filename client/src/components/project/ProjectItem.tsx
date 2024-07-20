@@ -38,11 +38,11 @@ const ProjectItemBox = ({project}: {project: Project}) => {
     };
     // END to open the relative project modal 
     const navigation = useNavigation<any>();
-    
+     
     return (
         <View style={{width: projectItemWidth}}>
             <View style={styles.projectItem}>
-                <TouchableOpacity onPress={() => navigation.navigate('Event', { projectId: project.id })}>
+                <TouchableOpacity onPress={() => navigation.navigate('ProjectStack', {screen: 'Event', params: { projectId: project.id }})}>
                     <ImageBackground
                     source={{
                         uri: Asset.fromModule(require("../../../assets/backgrounds/backgroundProjectsItem.png")).uri,
@@ -99,7 +99,6 @@ const ProjectItemBox = ({project}: {project: Project}) => {
             <ProjectItemMoreIconModal
                 isVisible={modalVisibility[project.id] || false}
                 onClose={() => closeModal(project.id)}
-                onDelete={() => null}
                 projectId={project.id}
                 projectTitle={project.title}
             />

@@ -1,5 +1,5 @@
-import React, {useState,useEffect} from 'react';
-import { View, Text, Dimensions, ImageBackground, TouchableOpacity, PanResponder, Animated, LayoutAnimation } from 'react-native';
+import React, {useState } from 'react';
+import { View, Text, Dimensions, ImageBackground, TouchableOpacity, PanResponder, Animated, LayoutAnimation, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import {editCheckedStatusTask, deleteTaskFromProject} from '../../reduxReducers/projectSlice'
 import { useSelector,useDispatch } from "react-redux";
@@ -10,12 +10,14 @@ import { CHECKED_TODO, DELETE_TODO } from '../../../apollo/mutations/todo/todoMu
 import { useMutation } from '@apollo/client';
 
 import styles from '../../styles';
-import AskConfirmationModal from '../modals/AskConfirmationModal'
 import Checkbox from '../checkbox';
 import Chevron from '../todo/chevron';
+import { useToast } from '../../utils/toastContext/ToastContext';
 
 const TaskItem = ({ todoId, projectId, calendarView, todayTaskCalendarView} : { todoId: string, projectId: string; calendarView: boolean, todayTaskCalendarView: boolean}) => {
     const navigation = useNavigation<any>();
+    const { success, error, warning } = useToast();
+
 
     const [showFooter, setShowFooter] = useState(false);
 
@@ -118,13 +120,15 @@ const TaskItem = ({ todoId, projectId, calendarView, todayTaskCalendarView} : { 
     };
     // Delete Task
     const [deleteTodoMutation] = useMutation(DELETE_TODO);
-    const [isModalConfirmDeleteVisible, setModalConfirmDeleteVisible] = useState(false);
 
     const askConfirmDelete = () => {
       if(showActionButtons){
         Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
       }
-      setModalConfirmDeleteVisible(true);
+      Alert.alert('Delete Task?', '', [
+        {text: 'Cancel', onPress: () => {}},
+        {text: 'OK', onPress: () => deleteTodo()}
+      ]);
     };
   
     const deleteTodo = async () => {
@@ -134,25 +138,13 @@ const TaskItem = ({ todoId, projectId, calendarView, todayTaskCalendarView} : { 
             todoId: todoId,
           },
         });
-  
-        if (data.deleteTodo) {
-          console.log('==========data.deleteTodo=================');
-          console.log(data.deleteTodo);
-          console.log('====================================');
-          dispatch(deleteTaskFromProject({ projectId: projectId, taskId: todoId }));
-        } else {
-          console.log('Failed to delete todo');
-          // Handle the failure, e.g., show an error message
-        }
-      } catch (error) {
-        console.error('Error deleting todo:', error);
-        // Handle the error, e.g., show an error message
+        dispatch(deleteTaskFromProject({ projectId: projectId, taskId: todoId }));
+        success('Task Deleted')
+      } catch (err) {
+        error('Error deleting Task');
       }
     };
-    // when i remove the todo return null for the renderList
-    if (!project || !todo) {
-      return null; // Or some other fallback component or behavior
-    }
+  
     return (
       <Animated.View
         style={[
@@ -226,12 +218,6 @@ const TaskItem = ({ todoId, projectId, calendarView, todayTaskCalendarView} : { 
                     <Text style={{ color: 'white', fontWeight: 'bold'}}>Delete</Text>
                   </View>
                 </TouchableOpacity>
-                <AskConfirmationModal
-                  isVisible={isModalConfirmDeleteVisible}
-                  message={'Delete task'}
-                  onConfirm={() => deleteTodo()}
-                  onCancel={() => setModalConfirmDeleteVisible(false)}
-                />
               </View>
     </Animated.View>
   )

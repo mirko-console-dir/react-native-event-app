@@ -1,10 +1,8 @@
-import React, { useEffect,useState } from 'react';
+import { useEffect,useState } from 'react';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import * as SecureStore from 'expo-secure-store';
-
-import { useApolloClient } from '@apollo/client';
 
 import {jwtDecode} from 'jwt-decode';
 import { decode as base64Decode, encode as base64Encode } from 'base-64';

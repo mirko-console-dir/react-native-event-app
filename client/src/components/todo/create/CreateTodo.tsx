@@ -1,4 +1,4 @@
-import React, { useEffect,useState } from 'react';
+import React, { useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -10,10 +10,9 @@ import {
   Keyboard,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  LayoutAnimation,
   ActivityIndicator
 } from 'react-native';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import DatePicker from 'react-native-modern-datepicker';
 
 import { useForm, Controller } from 'react-hook-form';
@@ -27,8 +26,10 @@ import { CREATE_TODO } from '../../../../apollo/mutations/todo/todoMutations';
 
 import ImagePickerModal from '../../modals/ImagePickerModal'; 
 import ImagesCarouselModal from '../../modals/todo/ImagesCarouselModal';
-import ConfirmCompletedActionModal from '../../modals/ConfirmCompletedActionModal';
+
 import SaveButton from '../../buttons/SaveButton'
+import useNavigationOptions from '../../../hooks/useNavigationOptions';
+import { useToast } from '../../../utils/toastContext/ToastContext';
 
 type StackProps = {
   today: string; 
@@ -44,6 +45,8 @@ interface ImageForm {
 }
 
 const CreateTodo = ({today}: StackProps) => {
+    const { success, error, warning } = useToast();
+
     const navigation = useNavigation<any>();
     const route = useRoute();
 
@@ -79,7 +82,7 @@ const CreateTodo = ({today}: StackProps) => {
 
     const toggleModal = () => {
       if(selectedImages.length > 1) {
-        console.warn('You can upload max 2 images for task')
+        return warning('Upload max 2 images for task')
       } else {
         if(Platform.OS === 'android') {
           setModalVisible(!isModalVisible);
@@ -116,13 +119,8 @@ const CreateTodo = ({today}: StackProps) => {
         caption: 'Image Caption' // You may replace this with your logic to get the caption
       };
     }
-    /* CONFIRM ACTION MODAL */
-    const [confirmActionModalVisible, setConfirmActionModalVisible] = useState(false)
-    const toggleConfirmActionModal = () => {
-      setConfirmActionModalVisible(!confirmActionModalVisible)
-    }
-    /*END  CONFIRM ACTION MODAL */
-    const [createTodo, { data, error, loading }] = useMutation(CREATE_TODO);
+
+    const [createTodo, { data, loading }] = useMutation(CREATE_TODO);
     const dispatch = useDispatch()
 
     const handleCreateTodo = async (formData : InputTypes) => {
@@ -168,9 +166,9 @@ const CreateTodo = ({today}: StackProps) => {
         clearErrors("expireDate") 
         reset();
         setBtnListCompleteVisible(true);
-
-      } catch (error) {
-        console.error('Error creating todo client:', error);
+        success('Success')
+      } catch (err) {
+        error('Something Wrong');
       } finally {
         setLoadingImage(false)
       }
@@ -181,13 +179,15 @@ const CreateTodo = ({today}: StackProps) => {
     const closeKeybord = () => {
       Keyboard.dismiss()
     }
-    useEffect(()=>{
-      setValue('expireDate', selectedDate);
+    const handleDateSelected = (date: string) => {
+      date ?? setSelectedDate(date);
+      
+      setValue('expireDate', date);
       if(errors.expireDate){
         clearErrors("expireDate") 
       }
-      closeKeybord()
-    }, [selectedDate])
+      Keyboard.dismiss();
+    }
     // END Close keybord avoid conflict with data picker onChange
 
     /* const windowHeight = useWindowDimensions().height;
@@ -210,11 +210,8 @@ const CreateTodo = ({today}: StackProps) => {
     const SaveButtonTask = () => (
       <SaveButton onPress={handleSubmit(handleCreateTodo)}/>
     )
-    useEffect(()=>{
-      navigation.setOptions({
-        headerRight: SaveButtonTask,
-      })
-    }, [navigation])
+    useNavigationOptions({headerRight: SaveButtonTask});
+  
     // END Save button
     if(loading || loadingImage){
       return (
@@ -225,7 +222,6 @@ const CreateTodo = ({today}: StackProps) => {
     }
     return (
         <SafeAreaView style={{flex: 1}}>
-          <ConfirmCompletedActionModal isVisible={confirmActionModalVisible} onClose={toggleConfirmActionModal}/>
            <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
@@ -311,11 +307,11 @@ const CreateTodo = ({today}: StackProps) => {
                             textHeaderFontSize: 15,
                           }}
                           current={today}
-                          selected={selectedDate}
+                          selected={selectedDate ?? null}
                           mode="calendar"
                           minuteInterval={30}
                           style={{ borderRadius: 10, backgroundColor: 'transparent', borderWidth: 0.2, paddingTop: 7, paddingRight: 5,paddingLeft: 5 }}
-                          onSelectedChange={date => setSelectedDate(date)}
+                          onSelectedChange={date => handleDateSelected(date)}
                           projectsDate={[projectExpireDate]}
                           todosDate={[]}
                         />

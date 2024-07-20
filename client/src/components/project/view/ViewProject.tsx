@@ -1,4 +1,4 @@
-import React, {useState,useEffect,useLayoutEffect} from 'react';
+import React, {useState} from 'react';
 import { SafeAreaView, View, Text, FlatList, ImageBackground, Platform, TouchableOpacity, ScrollView } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import DatePicker from 'react-native-modern-datepicker';
@@ -14,6 +14,7 @@ import PlusButton from '../../buttons/PlusButton';
 import CollaboratorAvatar from '../../avatars/CollaboratorAvatar'
 import AddCollaboratorsModal from '../../modals/project/AddCollaboratorsModal';
 import ProjectItemMoreIconModal from '../../modals/project/ProjectItemMoreIconModal'
+import useNavigationOptions from '../../../hooks/useNavigationOptions';
 
   type StackProps = {
     today: string; 
@@ -78,11 +79,9 @@ const ViewProject = ({today}: StackProps) => {
               </View>
               )
     }
-    useEffect(() => {
-      navigation.setOptions({
-        headerRight: ProjectViewActions,
-      }); 
-    },[])
+    
+    useNavigationOptions({headerRight: ProjectViewActions});
+
     return (
         <SafeAreaView style={{flex:1}}>
           <View style={styles.viewProjectPage}>

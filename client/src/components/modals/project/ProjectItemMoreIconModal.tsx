@@ -1,33 +1,34 @@
 import React, {useState} from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Modal from "react-native-modal";
 import styles from '../../../styles';
 import { useNavigation } from '@react-navigation/native';
 import { useMutation } from '@apollo/client';
 import { DELETE_PROJECT } from '../../../../apollo/mutations/project/projectMutations';
-import AskConfirmationModal from '../AskConfirmationModal';
 import { useDispatch } from 'react-redux';
 import { deleteStoredProject } from '../../../reduxReducers/projectSlice';
+import { useToast } from '../../../utils/toastContext/ToastContext';
 
 interface ProjectItemMoreIconModalProps {
   isVisible: boolean;
   onClose: () => void;
-  onDelete: () => void; 
   projectId: any; 
   projectTitle: any;
 }
 
-const ProjectItemMoreIconModal: React.FC<ProjectItemMoreIconModalProps> = ({ isVisible, onClose, onDelete, projectId, projectTitle }) => {
+const ProjectItemMoreIconModal: React.FC<ProjectItemMoreIconModalProps> = ({ isVisible, onClose, projectId, projectTitle }) => {
   const navigation = useNavigation<any>();
+  const { success, error, warning } = useToast();
 
   const [deleteProjectMutation] = useMutation(DELETE_PROJECT);
   const dispatch = useDispatch();
 
-  const [isModalConfirmDeleteVisible, setModalConfirmDeleteVisible] = useState(false);
-  const askConfirmDelete = () =>{
-    setModalConfirmDeleteVisible(true)
-  }
+  const askConfirmDelete = (projectId: string) =>
+    Alert.alert('Delete Event?', `Event and relative tasks will be delete`, [
+      {text: 'Cancel', onPress: () => {}},
+      {text: 'OK', onPress: () => deleteProject(projectId)}
+    ]);
 
   const deleteProject = async (projectId: string) => {
       try {
@@ -37,43 +38,29 @@ const ProjectItemMoreIconModal: React.FC<ProjectItemMoreIconModalProps> = ({ isV
           },
         });
   
-        if (data.deleteProject) {
-          console.log('Project deleted successfully');
-          dispatch(deleteStoredProject(projectId))
-
-          onDelete();
-          onClose();
-        } else {
-          console.log('Failed to delete project');
-          // Handle the failure, e.g., show an error message
-        }
-      } catch (error) {
-        console.error('Error deleting project:', error);
-        // Handle the error, e.g., show an error message
-        onClose()
+        dispatch(deleteStoredProject(projectId))
+        success('Event deleted')
+      } catch (err) {
+        error('Error deleting Event');
+      } finally {
+        onClose();
       }
   }
 
   const editProject = () => {
     onClose()
-    navigation.navigate('Edit Event', {projectId: projectId}) 
+    navigation.navigate('ProjectStack', {screen: 'Edit Event', params: { projectId: projectId }})
   }
   
   return (
     <Modal isVisible={isVisible} onBackdropPress={onClose}>
-        <AskConfirmationModal
-          isVisible={isModalConfirmDeleteVisible}
-          message={'Delete event'}
-          onConfirm={() => deleteProject(projectId)}
-          onCancel={() => setModalConfirmDeleteVisible(false)}
-        />
         <TouchableWithoutFeedback onPress={onClose}>
           <View style={modalStyles.centeredView}>
               <View style={modalStyles.modalView}>
                   <View>
                     <Text style={[styles.h2, styles.textCenter]}>{projectTitle}</Text>
                     <View style={modalStyles.actions}>
-                      <TouchableOpacity onPress={() => {askConfirmDelete()}}  style={[modalStyles.btn, modalStyles.deleteBtn]}>
+                      <TouchableOpacity onPress={() => {askConfirmDelete(projectId)}}  style={[modalStyles.btn, modalStyles.deleteBtn]}>
                         <Text style={styles.textCenter}>Delete</Text>
                       </TouchableOpacity>
                       <TouchableOpacity onPress={() => {editProject()}}  style={[modalStyles.btn, modalStyles.editBtn]}>

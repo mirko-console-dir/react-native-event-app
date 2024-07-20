@@ -1,7 +1,6 @@
-import React, {useEffect, useState}from 'react';
-import { View, Platform, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useMemo}from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Modal from "react-native-modal";
-import { SafeAreaView } from 'react-native-safe-area-context';
 import DatePicker from 'react-native-modern-datepicker';
 
 interface RangeDateSelectionModalProps {
@@ -10,13 +9,14 @@ interface RangeDateSelectionModalProps {
   projectsDate: Array<string>,
   onClose: () => void,
   onConfirm: (date1: string, date2: string) => void,
+  currentFilterType: string
 }
 
-const RangeDateSelectionModal: React.FC<RangeDateSelectionModalProps> = ({ isVisible, onClose, today, projectsDate, onConfirm }) => {
+const RangeDateSelectionModal: React.FC<RangeDateSelectionModalProps> = ({ isVisible, onClose, today, projectsDate, onConfirm, currentFilterType }) => {
     const [minSelected, setMinSelected] = useState('');
     const [maxSelected, setMaxSelected] = useState('');
     const [selectionNumber, setSelectionNumber] = useState(0);
-  
+
     const handleRange = (date:any)=>{
       if(!selectionNumber){
         setMinSelected(date)
@@ -38,6 +38,9 @@ const RangeDateSelectionModal: React.FC<RangeDateSelectionModalProps> = ({ isVis
       setMinSelected('')
       setMaxSelected('')
     }
+
+    useMemo(()=>currentFilterType == 'ALL' ? handleCancel() : null, [currentFilterType])
+
   return (
       <Modal isVisible={isVisible} onBackdropPress={onClose}>
         <View style={modalStyles.modalContent}>
