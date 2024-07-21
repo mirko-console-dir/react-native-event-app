@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import {
   SafeAreaView,
   View,
@@ -31,13 +31,12 @@ interface InputTypes {
 
 const CreateMemo = () => {
   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-  const navigation = useNavigation<any>();
   const { control, handleSubmit, reset, formState: { errors } } = useForm<InputTypes>();
 
   const [createMemo, { data, error, loading }] = useMutation(CREATE_MEMO);
   const dispatch = useDispatch()
 
-  const handleCreateMemo = async (formData : any) => {
+  const handleCreateMemo = useCallback(async (formData : any) => {
     const { title, content } = formData;
 
       try {
@@ -60,7 +59,7 @@ const CreateMemo = () => {
         reset()
       }
     
-  };
+  },[createMemo, dispatch, reset]);
 
     // Save button
     const SaveButtonMemo = () => (

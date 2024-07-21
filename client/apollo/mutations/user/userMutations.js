@@ -11,6 +11,7 @@ export const CREATE_USER = gql`
         email
         avatar
       }
+      errors
     }
   }
 `;
@@ -32,6 +33,7 @@ export const LOGIN_USER = gql`
           avatar
         }
       }
+      errors
     }
   }
 `; 
@@ -69,3 +71,4 @@ export const DELETE_COLLABORATOR = gql`
     deleteCollaboratorUser(collaboratorId: $collaboratorId)
   }
 `;
+

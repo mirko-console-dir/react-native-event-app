@@ -67,7 +67,7 @@ const useAuth = () => {
           if (!usr){
             await askFreshToken(token)
           }
-        }
+        } 
       } catch (error) {
         console.error('Error checking auth status:', error);
       } finally {
@@ -89,9 +89,9 @@ const useAuth = () => {
           dispatch(setUser(userLoggedIn));
         }
     };
-    if (isLoggedIn) {
-      fetchUser();
-    }
+
+    if (isLoggedIn) fetchUser();
+    
   }, [isLoggedIn]);
   
   return { isLoggedIn, isAuthCheckComplete };

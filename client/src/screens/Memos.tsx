@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import { SafeAreaView, View, Text, TouchableOpacity, ScrollView, Button } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import styles from '../styles';
@@ -18,14 +18,13 @@ const Memos = () => {
 
   // to open the relative memo modal 
   const [modalVisibility, setModalVisibility] = useState<{ [key: string]: boolean }>({});
-
-  const openModal = (memoId: string) => {
+  const openModal = useCallback((memoId: string) => {
     setModalVisibility((prev) => ({ ...prev, [memoId]: true }));
-  };
+  }, []);
 
-  const closeModal = (memoId: string) => {
+  const closeModal = useCallback((memoId: string) => {
     setModalVisibility((prev) => ({ ...prev, [memoId]: false }));
-  };
+  }, []);
   // END to open the relative memo modal 
 
   const renderItem = ({item}: {item: Memo}) => (

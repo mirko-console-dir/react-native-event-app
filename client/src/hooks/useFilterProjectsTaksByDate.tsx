@@ -3,7 +3,6 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../app/store';
 import { Project, Todo } from '../utils/interfaces/types';
 
-
 const useFilteredProjectsTodosByDate = (selectedDate: string) => {
   const projects: any = useSelector((state: RootState) => state.projects.projects);
 
@@ -13,7 +12,7 @@ const useFilteredProjectsTodosByDate = (selectedDate: string) => {
 
   const selectedTasksByDate = useMemo(() => {
     return projects.flatMap((project: Project) =>
-      project.todos?.filter((todo: Todo) => todo.expireDate === selectedDate)
+      project.todos?.filter((todo: Todo) => todo.expireDate === selectedDate) ?? []
     );
   }, [selectedDate, projects]);
 

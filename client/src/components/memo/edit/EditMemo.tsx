@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useRoute } from '@react-navigation/native';
 import {
   SafeAreaView,
@@ -52,7 +52,7 @@ const EditMemo = () => {
 
   const [editMemo, {loading}] = useMutation(EDIT_MEMO);
   const dispatch = useDispatch()
-  const handleEditMemo = async (formData : any) => {
+  const handleEditMemo = useCallback(async (formData : any) => {
     const { editedTitle, editedContent } = formData;
 
     if(memo.title == editedTitle && memo.content == editedContent) return warning('Nothing to edit')
@@ -81,7 +81,7 @@ const EditMemo = () => {
     } finally{
       //reset()
     }
-  };
+  }, [memo, memoId, editMemo, dispatch, success, warning, error, reset]);
 
   const SaveButtonMemo = () => (
       <SaveButton onPress={handleSubmit(handleEditMemo)}/>

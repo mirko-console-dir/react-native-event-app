@@ -9,9 +9,10 @@ export default gql`
         getUser(ID: ID!): User
     }
     type AuthPayload {
-        accessToken: String!
-        refreshToken: String!
-        user: User!
+        accessToken: String
+        refreshToken: String
+        user: User
+        errors: [String]
     }
     type Mutation {
         createUser(input: CreateUserInput!): AuthPayload!
