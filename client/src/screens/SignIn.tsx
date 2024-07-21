@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -8,8 +8,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Alert,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useForm, Controller } from 'react-hook-form';
@@ -27,20 +26,24 @@ const SignIn = () => {
   const [loginUser, {error,data, loading}] = useLoginUser();
 
   const { control, handleSubmit, reset, formState: { errors }, setValue, setError,clearErrors } = useForm<InputTypes>();  
-
   const [showPassword, setShowPassword] = useState(false);
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword(prev => !prev);
+  }, []);
 
-  const onSubmit = (formData: InputTypes) => {
+  const onSubmit = useCallback((formData: InputTypes) => {
     const {email, password} = formData
     loginUser(email, password);
-  };
+  },[loginUser]);
+
   if(loading){
     return (
         <View style={{flex:1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
-            <ActivityIndicator size="large" style={{ transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }] }} />
+            <ActivityIndicator size="large" style={{ transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }] }} /> 
         </View>
     )
-}
+  }
+
   return (
     <SafeAreaView>
       <KeyboardAvoidingView
@@ -93,7 +96,7 @@ const SignIn = () => {
                   />
                   <TouchableOpacity
                     style={styles.iconContainer}
-                    onPress={() => setShowPassword(!showPassword)}
+                    onPress={() => togglePasswordVisibility()}
                   >
                     <Ionicons
                       name={showPassword ? 'eye-off-outline' : 'eye-outline'}

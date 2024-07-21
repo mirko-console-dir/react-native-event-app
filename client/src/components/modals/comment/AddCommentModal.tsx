@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Platform, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import Modal from "react-native-modal";
 
@@ -25,7 +25,7 @@ const AddCommentModal: React.FC<AddCommentModalProps> = ({ isVisible, todoId, pr
 
  const { control, handleSubmit, reset, formState: { errors }, setValue, setError,clearErrors } = useForm<InputTypes>();    
 
-  const addComment = async (formData: InputTypes) => {
+  const addComment = useCallback(async (formData: InputTypes) => {
     const {commentText} = formData
     if(!commentText.trim()){
       setError("commentText", {
@@ -58,11 +58,13 @@ const AddCommentModal: React.FC<AddCommentModalProps> = ({ isVisible, todoId, pr
       console.log('completed');
       console.log('====================================');
     }
-  }
-  const close = () => {
+  }, [addCommentTodo, dispatch, projectId, todoId, setError, reset, clearErrors, onClose]);
+  
+  const close = useCallback(() => {
     reset()
     onClose()
-  }
+  }, [reset, onClose]);
+
   return (
       <Modal isVisible={isVisible} onBackdropPress={close}>
         <View style={styles.modalContent}>

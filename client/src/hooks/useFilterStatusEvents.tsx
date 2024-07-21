@@ -1,31 +1,33 @@
-import {useMemo, useState} from 'react'
+import { useMemo, useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../app/store';
 import { Project } from '../utils/interfaces/types';
 
 const useFilterStatusEvents = () => {
-    const projects : any = useSelector((state: RootState) => state.projects.projects);
-    const [projectsInProgress, setProjectsInProgress] = useState<Array<Project>>([]);
-    const [projectsUpComing, setProjectsUpComing] = useState<Array<Project>>([]);
-    const [projectsCompleted, setProjectsCompleted] = useState<Array<Project>>([]);
+  const projects: any = useSelector((state: RootState) => state.projects.projects);
   
-    const [projectsDate, setProjectsDate] = useState<any>([]);
-    useMemo(() => {
-        // Filter projects that are in progress/pending
-        const inProgressProjects = projects.filter((project: Project) => project.status === "In Progress");
-        const upComingProjects = projects.filter((project: Project) => project.status === "Pending");
-        const projectsCompleted = projects.filter((project: Project) => project.status === "Completed");
-      
-        setProjectsInProgress(inProgressProjects);
-        setProjectsUpComing(upComingProjects);
-        setProjectsCompleted(projectsCompleted);
-        // Extract expiration dates and update projectsDate and todos state
-        const expirationDatesProjects = projects.map((project: Project) => project.expireDate);
-        setProjectsDate(expirationDatesProjects);
-        
-      }, [projects]);
+  const filterInProgress = useCallback(() => {
+    return projects.filter((project: Project) => project.status === 'In Progress');
+  }, [projects]);
 
-    return {projectsInProgress, projectsUpComing, projectsCompleted, projectsDate}
-}
+  const filterUpComing = useCallback(() => {
+    return projects.filter((project: Project) => project.status === 'Pending');
+  }, [projects]);
 
-export default useFilterStatusEvents
+  const filterCompleted = useCallback(() => {
+    return projects.filter((project: Project) => project.status === 'Completed');
+  }, [projects]);
+
+  const getExpirationDates = useCallback(() => {
+    return projects.map((project: Project) => project.expireDate);
+  }, [projects]);
+
+  const projectsInProgress = useMemo(filterInProgress, [filterInProgress]);
+  const projectsUpComing = useMemo(filterUpComing, [filterUpComing]);
+  const projectsCompleted = useMemo(filterCompleted, [filterCompleted]);
+  const projectsDate = useMemo(getExpirationDates, [getExpirationDates]);
+
+  return { projectsInProgress, projectsUpComing, projectsCompleted, projectsDate };
+};
+
+export default useFilterStatusEvents;

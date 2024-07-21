@@ -13,14 +13,14 @@ import { useToast } from '../../../utils/toastContext/ToastContext';
 interface ProjectItemMoreIconModalProps {
   isVisible: boolean;
   onClose: () => void;
+  onDelete: () => void;
   projectId: any; 
   projectTitle: any;
 }
 
-const ProjectItemMoreIconModal: React.FC<ProjectItemMoreIconModalProps> = ({ isVisible, onClose, projectId, projectTitle }) => {
+const ProjectItemMoreIconModal: React.FC<ProjectItemMoreIconModalProps> = ({ isVisible, onClose,onDelete,projectId, projectTitle }) => {
   const navigation = useNavigation<any>();
   const { success, error, warning } = useToast();
-
   const [deleteProjectMutation] = useMutation(DELETE_PROJECT);
   const dispatch = useDispatch();
 
@@ -43,7 +43,7 @@ const ProjectItemMoreIconModal: React.FC<ProjectItemMoreIconModalProps> = ({ isV
       } catch (err) {
         error('Error deleting Event');
       } finally {
-        onClose();
+        onDelete()
       }
   }
 

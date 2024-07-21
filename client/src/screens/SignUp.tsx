@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -8,24 +8,15 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   Image,
   ActivityIndicator
 } from 'react-native';
-import { CommonActions, useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-import * as SecureStore from 'expo-secure-store';
+import {  useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useForm, Controller } from 'react-hook-form';
-import { useDispatch } from "react-redux";
-import { RootState } from '../../app/store';
-import { setUser } from '../reduxReducers/userSlice';
-
-import { useMutation,useApolloClient } from '@apollo/client';
-import { CREATE_USER } from '../../apollo'; 
 import ImagePickerModal from '../components/modals/ImagePickerModal'; 
+import useSignUpUser from '../hooks/useSignUpUser';
 
 interface InputTypes {
   fullname: string
@@ -36,9 +27,6 @@ interface InputTypes {
 const SignUp = () => {
   const navigation = useNavigation<any>();
 
-  const dispatch = useDispatch();
-  const client = useApolloClient();
-
   const { control, handleSubmit, reset, formState: { errors }, setValue, setError,clearErrors } = useForm<InputTypes>();  
   const [showPassword, setShowPassword] = useState(false);
 
@@ -46,11 +34,11 @@ const SignUp = () => {
   const [selectedImage, setSelectedImage] = useState('');
   const [isModalVisible, setModalVisible] = useState(false);
 
-  const toggleModal = () => {
-    setModalVisible(!isModalVisible);
-  };
+  const toggleModal = useCallback(() => {
+    setModalVisible(prev=>!prev);
+  }, [setModalVisible]);
 
-  const fetchImageData = async (imageUri: any) => {
+  const fetchImageData = useCallback(async (imageUri: any) => {
     const response = await fetch(imageUri);
     const arrayBuffer = await response.arrayBuffer();
     return {
@@ -59,57 +47,15 @@ const SignUp = () => {
       originalFileName: 'avatar-user',
       caption: 'Image Caption',
     };
-  };
+  }, []);
 
-  const handleImageSelected = async (imageUri: any) => {
+  const handleImageSelected = useCallback(async (imageUri: any) => {
     setSelectedImage(imageUri);
-    setModalVisible(false);
-  };
+  }, []);
   // End avatar 
-  const [createUser, { error, loading }] = useMutation(CREATE_USER, {
-    onCompleted: async (data) => {
-      if (data.createUser.accessToken && data.createUser.refreshToken) {
-        // Save the tokens in SecureStore
-        await SecureStore.setItemAsync('userAccessToken', data.createUser.accessToken);
-        await SecureStore.setItemAsync('userRefreshToken', data.createUser.refreshToken);
+  const [createUser, {error, loading}] = useSignUpUser();
 
-        // Clear and set user in AsyncStorage
-        await AsyncStorage.removeItem('user');
-        await AsyncStorage.setItem('user', JSON.stringify(data.createUser.user));
-
-        // Dispatch user to Redux store
-        dispatch(setUser(data.createUser.user));
-
-        // Reset the Apollo Client store
-        await client.clearStore();
-        await client.resetStore();
-
-
-        Alert.alert('Success', 'Logged In Successfully.');
-        navigation.dispatch(
-          CommonActions.reset({
-            index: 0,
-            routes: [{ name: 'Tabs' }],
-          })
-        );
-      }
-    },
-  });
-
-/*   const onSubmit = () => {   
-    createUser({
-      variables: {
-        input: {
-          fullname,
-          email,
-          password,
-          avatar: selectedImage || null,
-        },
-      },
-    });
-  }; */
-
-  const onSubmit = async (formData: InputTypes) => {
+  const onSubmit = useCallback(async (formData: InputTypes) => {
     const {fullname, email, password} = formData;
     try {
       let avatarData = null;
@@ -117,27 +63,21 @@ const SignUp = () => {
         avatarData = await fetchImageData(selectedImage);
       }
 
-      createUser({
-        variables: {
-          input: {
-            fullname: fullname,
-            email: email.toLowerCase(),
-            password: password,
-            avatar: avatarData,
-          },
-        },
-      });
+      createUser(fullname,email.toLowerCase(),password,avatarData);
+
     } catch (error) {
-      console.error('Error processing image data:', error);
+      console.error('Error create user image data:', error);
     }
-  };
+  }, [selectedImage, fetchImageData, createUser, loading]);
+
   if(loading){
     return (
         <View style={{flex:1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
-            <ActivityIndicator size="large" style={{ transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }] }} />
+            <ActivityIndicator size="large" style={{ transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }] }} /> 
         </View>
     )
   }
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? 120 : 0}>

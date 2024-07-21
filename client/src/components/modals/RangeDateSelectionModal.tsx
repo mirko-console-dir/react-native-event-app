@@ -1,7 +1,8 @@
-import React, { useState, useMemo}from 'react';
+import React, { useState, useMemo, useCallback}from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Modal from "react-native-modal";
 import DatePicker from 'react-native-modern-datepicker';
+import { useToast } from '../../utils/toastContext/ToastContext';
 
 interface RangeDateSelectionModalProps {
   isVisible: boolean;
@@ -13,11 +14,13 @@ interface RangeDateSelectionModalProps {
 }
 
 const RangeDateSelectionModal: React.FC<RangeDateSelectionModalProps> = ({ isVisible, onClose, today, projectsDate, onConfirm, currentFilterType }) => {
+  const { success, error, warning } = useToast();
+
     const [minSelected, setMinSelected] = useState('');
     const [maxSelected, setMaxSelected] = useState('');
     const [selectionNumber, setSelectionNumber] = useState(0);
 
-    const handleRange = (date:any)=>{
+    const handleRange = useCallback((date:any)=>{
       if(!selectionNumber){
         setMinSelected(date)
         setSelectionNumber(1)
@@ -25,19 +28,21 @@ const RangeDateSelectionModal: React.FC<RangeDateSelectionModalProps> = ({ isVis
         setMaxSelected(date)
         setSelectionNumber(0)
       }
-    }
-    const handleConfirm = () => {
+    },[selectionNumber])
+
+    const handleConfirm = useCallback(() => {
       if(minSelected == '' || maxSelected == ''){
-        console.warn('Please select Start and End date')
+        warning('Please select Start and End date')
         return
       }
       onConfirm(minSelected,maxSelected)
       onClose()
-    }
-    const handleCancel = () => {
+    },[minSelected,maxSelected,onConfirm,onClose,warning])
+
+    const handleCancel = useCallback(() => {
       setMinSelected('')
       setMaxSelected('')
-    }
+    },[])
 
     useMemo(()=>currentFilterType == 'ALL' ? handleCancel() : null, [currentFilterType])
 

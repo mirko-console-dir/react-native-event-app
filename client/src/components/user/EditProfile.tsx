@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, {useCallback, useState} from 'react'
 import {
     SafeAreaView,
     View,
@@ -27,6 +27,7 @@ import ProfileAvatar from '../avatars/ProfileAvatar';
 import ImagePickerModal from '../../components/modals/ImagePickerModal'; 
 import SaveButton from '../buttons/SaveButton'
 import useNavigationOptions from '../../hooks/useNavigationOptions';
+import { useToast } from '../../utils/toastContext/ToastContext';
 
 interface InputTypes {
     fullname: string
@@ -35,6 +36,7 @@ interface InputTypes {
 }
 
 const EditProfile = () => {
+  const { success, error : errorToast, warning } = useToast();
     const navigation = useNavigation<any>();
     const dispatch = useDispatch()
     const height = Dimensions.get('window').height
@@ -55,54 +57,59 @@ const EditProfile = () => {
     const [selectedImage, setSelectedImage] = useState('');
     const [isModalVisible, setModalVisible] = useState(false);
 
-    const toggleModal = () => {
-        setModalVisible(!isModalVisible);
-    };
+    const toggleModal = useCallback(() => {
+        setModalVisible(prev=>!prev);
+    },[]);
 
-    const fetchImageData = async (imageUri: any) => {
+    const fetchImageData = useCallback(async (imageUri: any) => {
         const response = await fetch(imageUri);
         const arrayBuffer = await response.arrayBuffer();
         return {
-        data: Array.from(new Uint8Array(arrayBuffer)),
-        contentType: response.headers.get('content-type'),
-        originalFileName: 'avatar-user',
-        caption: 'Image Caption',
+            data: Array.from(new Uint8Array(arrayBuffer)),
+            contentType: response.headers.get('content-type'),
+            originalFileName: 'avatar-user',
+            caption: 'Image Caption',
         };
-    };
+    },[]);
 
-    const handleImageSelected = async (imageUri: any) => {
+    const handleImageSelected = useCallback(async (imageUri: any) => {
         setSelectedImage(imageUri);
-        setModalVisible(false);
-    };
+    },[]);
     // End avatar 
     const [editUser, { error, loading, data }] = useMutation(EDIT_USER)
-    const handleEditUser = async (formData: InputTypes) => {
+    const handleEditUser = useCallback(async (formData: InputTypes) => {
         const {fullname, email, password} = formData;
         let avatarData = null;
         if (selectedImage) {
           avatarData = await fetchImageData(selectedImage);
         }
-        const result = await editUser({
-            variables: {
-              input: {
-                fullname: fullname.trim(),
-                email: email.trim(),
-                password: password && password.trim(),
-                avatar: avatarData,
-              },
+        try{
+            const result = await editUser({
+                variables: {
+                  input: {
+                    fullname: fullname.trim(),
+                    email: email.trim(),
+                    password: password && password.trim(),
+                    avatar: avatarData,
+                  },
+                }
+              })
+            if(result.data.editUser){
+                dispatch(updateUser(result.data.editUser))
             }
-          })
-        if(result.data.editUser){
-            dispatch(updateUser(result.data.editUser))
+            reset()
+            setSelectedImage('')
+            navigation.goBack()
+            success('User edited')
+        }catch(err){
+            errorToast('Something wrong')
         }
-        reset()
-        setSelectedImage('')
-        navigation.goBack()
-    }
+    },[fetchImageData, reset, navigation, editUser, dispatch, updateUser, success, error])
+
     // Save button
-    const SaveButtonUser = () => (
+    const SaveButtonUser = useCallback(() => (
         <SaveButton onPress={handleSubmit(handleEditUser)}/>
-    )
+    ),[handleSubmit,handleEditUser])
     useNavigationOptions({headerRight: SaveButtonUser});
     // END Save button
     if(loading){

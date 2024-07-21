@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Modal from "react-native-modal";
@@ -20,41 +20,42 @@ interface MemoMoreIconModalProps {
 }
 
 const MemoMoreIconModal: React.FC<MemoMoreIconModalProps> = ({ isVisible, onClose, memoId }) => {
+  const dispatch = useDispatch()
   const navigation = useNavigation<any>();
   const { success, error, warning } = useToast();
 
   const memo: Memo | any = useSelector((state: RootState) => {
     return state.memos.memos.find((memo) => memo.id === memoId);
   });
+  
   const [deleteMemoMutation] = useMutation(DELETE_MEMO);
-  const dispatch = useDispatch()
+  const deleteMemo = useCallback(async (memoId:string) => {
+    try {
+      const { data } = await deleteMemoMutation({
+        variables: {
+          memoId: memoId,
+        },
+      });
 
-  const askConfirmDelete = (memoId: string, memoTitle: string) =>
+      dispatch(deleteStoredMemo(memoId))
+      success('Success')
+    } catch (err) {
+      error('Error Deleting Memo');
+    } finally {
+      onClose()
+    }
+  }, [dispatch, success, error, onClose]);
+
+  const askConfirmDelete = useCallback((memoId: string, memoTitle: string) =>
     Alert.alert('Delete Memo?', `${memoTitle} will be delete`, [
       {text: 'Cancel', onPress: () => {}},
       {text: 'OK', onPress: () => deleteMemo(memoId)}
-    ]);
-  const deleteMemo = async (memoId:string) => {
-      try {
-        const { data } = await deleteMemoMutation({
-          variables: {
-            memoId: memoId,
-          },
-        });
-  
-        dispatch(deleteStoredMemo(memoId))
-        success('Success')
-      } catch (err) {
-        error('Error Deleting Memo');
-      } finally {
-        onClose()
-      }
-  }
+    ]),[deleteMemo]);
 
-  const editMemo = (memoId:string) => {
+  const editMemo = useCallback((memoId:string) => {
     onClose()
     navigation.navigate('Edit Memo', {memoId: memoId}) 
-  }
+  }, [navigation, onClose]);
   
   return (
     <Modal isVisible={isVisible} onBackdropPress={onClose}>

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SafeAreaView, View, Text, TouchableOpacity, LayoutAnimation,Dimensions, Alert } from 'react-native';
+import { SafeAreaView, View, Text, TouchableOpacity,Dimensions, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 import styles from '../styles';
@@ -18,7 +18,7 @@ import { useApolloClient } from '@apollo/client';
 import { useToast } from '../utils/toastContext/ToastContext';
 
 const Profile = () => {
-  const { success, error, warning } = useToast();
+  const { success, error } = useToast();
 
   const client = useApolloClient();
   const navigation = useNavigation<any>();
@@ -30,12 +30,13 @@ const Profile = () => {
   });
 
  
-  const askConfirmSignOut = () =>
+  const askConfirmSignOut = useCallback(() =>
     Alert.alert('Log Out?', '', [
       {text: 'Cancel', onPress: () => {}},
       {text: 'OK', onPress: () => handleSignOut()}
-    ]);
-  const handleSignOut = async () => {
+    ]), []);
+
+  const handleSignOut = useCallback(async() => {
     try {
       // Remove userAccessToken from SecureStore
       await AsyncStorage.removeItem('user')
@@ -47,7 +48,7 @@ const Profile = () => {
     } catch (err) {
       error('Error while signing out');
     }
-  };
+  }, [AsyncStorage, client,success, error]);
  
   return (
     <SafeAreaView style={{flex:1}}>     

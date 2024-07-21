@@ -23,7 +23,7 @@ export default {
         const existingUser = await User.findOne({ email });
 
         if (existingUser) {
-            throw new ApolloError(`Email is already in use ${email}`, "USER_ALREADY_EXIST");
+          return {errors: [`Email is already in use ${email}`]}
         }
       
         // Encrypt password
@@ -52,9 +52,6 @@ export default {
         if(buffer != null){
           newUser.avatar = buffer
         }
-   console.log('=========newUser================');
-   console.log(newUser);
-   console.log('====================================');
         // Create a JWT (access token), attach to the user model
         const accessToken = jwt.sign(
             {
@@ -83,7 +80,7 @@ export default {
         await newRefreshToken.save();
 
         // save user
-        await newUser.save();
+        const user = await newUser.save();
 
         // redis cache
         // Check if the user key already exists
@@ -93,11 +90,12 @@ export default {
           await checkUserExist(user)
         }  
         // END redis cache
-
+        const errors = []
         return {
           accessToken,
           refreshToken,
-          user: newUser
+          user,
+          errors
         };
 
       } catch (error) {
@@ -107,7 +105,6 @@ export default {
     loginUser: async (_, { input }) => {
       try {
         const { email, password } = input;
-
         // Check if the email exists, and verify the password
         const user = await User.findOne({ email });
         //console.log('user logged in ',user)
@@ -147,19 +144,19 @@ export default {
             // overwrite the oldone in refreshtokens collection
             await saveRefreshToken(user._id, refreshToken);
             await user.populateCollaborators()
-
+            const errors = []
             return {
               accessToken,
               refreshToken,
-              user
+              user,
+              errors
             };
         } else {
-            throw new Error('Authentication failed.');
+          return {errors: ['Please check email and password']}
         }
       } catch (error) {
-          throw new Error("Failed to login user: " + error.message);
+        return {errors: ['Please check email and password']}
       }
-     
     },
     addCollaboratorToUser: async (_, { collaboratorEmail }, contextValue) => {
       // Check if the user is authenticated
@@ -228,7 +225,7 @@ export default {
         const existingUser = await User.findOne({ email });
 
         if (existingUser && user.email != email) {
-            throw new ApolloError(`Email is already in use ${email}`, "USER_ALREADY_EXIST");
+            return new ApolloError(`Email is already in use ${email}`, "USER_ALREADY_EXIST");
         }
       
         // Image upload

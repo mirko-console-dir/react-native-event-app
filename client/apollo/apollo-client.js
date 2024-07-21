@@ -69,43 +69,63 @@ const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) =
           const errorCode = extensions?.code;
           //console.log('errorCode');
           //console.log(errorCode);
-
-          if (errorCode === 'UNAUTHENTICATED') {
-            try {
-              const newAccessToken = await refreshToken();
-              console.log('Token Refresh - New Access Token:', newAccessToken);
-
-              // Update headers with the new token
-              operation.setContext(({ headers }) => ({
-                headers: {
-                  ...headers,
-                  authorization: newAccessToken ? `Bearer ${newAccessToken}` : '',
-                },
-              }));
-
-              // Retry the original operation with the new token
-              const subscriber = forward(operation).subscribe(observer);
-              console.log('operation forward')
-              // reactivate web socket 
-              wsLink = createWsLink();
-              // Cleanup subscriptions
-              return () => subscriber.unsubscribe();
-            } catch (refreshError) {
-              console.error('Token Refresh - Failed:', refreshError);
-              observer.error(refreshError);
-            }
-          }
-          if(errorCode === 'USER_ALREADY_LISTED'){
-            Alert.alert('User already added')
-          }
-          if(errorCode === 'COLLABORATOR_EMAIL_NOT_EXIST'){
-            Alert.alert(`${extensions.stacktrace[0]} \n\nPlease check the email or ask to the new user to download the app and register \n\nThank you`)
-          }
-          if(errorCode === 'COLLABORATOR_EMAIL_SAME_AS_USER_EMAIL'){
-            Alert.alert(extensions.stacktrace[0])
-          }
-          if(errorCode === 'USER_IS_NOT_AUTHORIZED_COMMENT'){
-            Alert.alert(message)
+          switch(errorCode) {
+            case 'UNAUTHENTICATED':
+              try {
+                const newAccessToken = await refreshToken();
+                console.log('Token Refresh - New Access Token:', newAccessToken);
+  
+                // Update headers with the new token
+                operation.setContext(({ headers }) => ({
+                  headers: {
+                    ...headers,
+                    authorization: newAccessToken ? `Bearer ${newAccessToken}` : '',
+                  },
+                }));
+  
+                // Retry the original operation with the new token
+                const subscriber = forward(operation).subscribe(observer);
+                console.log('operation forward')
+                // reactivate web socket 
+                wsLink = createWsLink();
+                // Cleanup subscriptions
+                return () => subscriber.unsubscribe();
+              } catch (refreshError) {
+                console.error('Token Refresh - Failed:', refreshError);
+                observer.error(refreshError);
+              } finally {
+                observer.complete();
+              }
+            break;
+            case 'USER_ALREADY_LISTED':
+              Alert.alert('User already added')
+              observer.complete();
+            break;
+            case 'COLLABORATOR_EMAIL_NOT_EXIST':
+              Alert.alert(`${extensions.stacktrace[0]} \n\nPlease check the email or ask to the new user to download the app and register \n\nThank you`)
+              observer.complete();
+            break;
+            case 'COLLABORATOR_EMAIL_SAME_AS_USER_EMAIL':
+              Alert.alert(extensions.stacktrace[0])
+              observer.complete();
+            break;
+            case 'USER_IS_NOT_AUTHORIZED_COMMENT':
+              Alert.alert(message)
+              observer.complete();
+            break;
+            case 'USER_ALREADY_EXIST':
+              Alert.alert(extensions.stacktrace[0])
+              observer.complete();
+            break;
+            case 'USER_LOGIN_NOT_FOUND':
+              Alert.alert("User not found\nPlease check email and password")
+              observer.complete();
+            break;
+            default:
+              console.log(errorCode)
+              Alert.alert('GQL ERROR')
+              observer.complete();
+            break;
           }
         });
       }
@@ -115,7 +135,7 @@ const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) =
     } catch (error) {
       console.error('Error in handleAuthenticationError:', error);
       observer.error(error);
-    }
+    } 
   });
 });
 

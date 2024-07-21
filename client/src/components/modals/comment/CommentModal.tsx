@@ -1,4 +1,4 @@
-import React, { useState }from 'react';
+import React, { useCallback, useMemo, useState }from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet,ScrollView, Alert } from 'react-native';
 import Modal from "react-native-modal";
 import { useForm, Controller } from 'react-hook-form';
@@ -26,27 +26,27 @@ const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoI
     const initialState = 'view'
     const [commentMode, setCommentMode] = useState(initialState)
 
-    const closeModal = () => {
+    const closeModal = useCallback(() => {
         setCommentMode(initialState)
         onClose()
-    }
-    
+    }, [initialState, onClose]);
+
     const { control, handleSubmit, reset, formState: { errors }, setValue, setError,clearErrors } = useForm<InputTypes>({
         defaultValues: {
             commentText: commentItem.commentText,
         }
     });   
 
-
     /* Edit Comment */
     const [editCommentTodo] = useMutation(EDIT_COMMENT_TODO);
     const dispatch = useDispatch()
     
-    const editComment = async (formData: InputTypes) => {
+    const editComment = useCallback(async (formData: InputTypes) => {
         const {commentText} = formData
-        if(commentText == commentItem.commentText) return warning('Nothing to edit')
-
-
+        if(commentText == commentItem.commentText) {
+            warning('Nothing to edit')
+            return closeModal()
+        } 
         try {
             const { data } = await editCommentTodo({
                 variables: {
@@ -65,18 +65,13 @@ const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoI
             closeModal()
         }        
        
-    }
+    }, [editCommentTodo, dispatch, projectId, todoId, commentItem.id, commentItem.commentText, success, error, closeModal]);
+
     /* End Edit Comment */
 
     /* Delete Comment */
     const [deleteCommentTodo] = useMutation(DELETE_COMMENT_TODO);
-
-    const askConfirmDelete = (commentId: string) =>
-        Alert.alert('Delete Comment?', '', [
-          {text: 'Cancel', onPress: () => {}},
-          {text: 'OK', onPress: () => deleteComment(commentId)}
-        ]);
-    const deleteComment = async (commentId: any) => {
+    const deleteComment = useCallback(async (commentId: any) => {
         try {
             const { data } = await deleteCommentTodo({
                 variables: {
@@ -91,78 +86,91 @@ const CommentModal: React.FC<CommentModalProps> = ({ isVisible, projectId, todoI
         } finally { 
           closeModal()
         }
-    }
+    }, [deleteCommentTodo, dispatch, projectId, todoId, success, error, closeModal]);
+
+    const askConfirmDelete = useCallback((commentId: string) =>
+        Alert.alert('Delete Comment?', '', [
+          { text: 'Cancel', onPress: () => {} },
+          { text: 'OK', onPress: () => deleteComment(commentId) },
+    ]), [deleteComment]);
     /* End Delete Comment */
 
+
+    const renderContent = useMemo(() => {
+    if (commentMode === 'edit') {
+      return (
+        <Controller
+          control={control}
+          render={({ field }) => (
+            <>
+              <TextInput
+                placeholder="Comment"
+                value={field.value}
+                onChangeText={field.onChange}
+                style={styles.input}
+                multiline={true}
+                numberOfLines={3}
+              />
+              {errors.commentText && 
+                <Text style={{ color: 'red', marginBottom: 10, marginTop: -10 }}>
+                  {errors.commentText.message}
+                </Text>
+              }
+            </>
+          )}
+          name="commentText"
+          rules={{ 
+            required: 'You must enter a comment',
+            validate: (value) => {
+              if (value.trim() === '') {
+                return 'Comment cannot be empty';
+              }
+              return true;
+            },
+          }}
+        />
+      );
+    } else {
+      return (
+        <Text style={[styles.commentText, { textAlign: 'center' }]}>
+          {commentItem.commentText}
+        </Text>
+      );
+    }
+    }, [commentMode, control, errors.commentText, commentItem.commentText]);
 
     return (
         <Modal isVisible={isVisible} onBackdropPress={closeModal}>
             <View style={styles.modalContent}>
-                <ScrollView style={styles.main} >
-                    {commentMode == 'edit' ? 
-                        <Controller
-                            control={control}
-                            render={({ field }) => (
-                            <>
-                                <TextInput
-                                  placeholder="Comment"
-                                  value={field.value}
-                                  onChangeText={field.onChange}
-                                  style={styles.input}
-                                  multiline={true}
-                                  numberOfLines={3}
-                                />
-                                {errors.commentText && 
-                                   <Text style={{color:'red', marginBottom: 10, marginTop: -10}}>{errors.commentText.message}</Text>
-                                }
-                            </>
-                            )}
-                            name="commentText"
-                            rules={{ 
-                                required: 'You must enter a comment',
-                                validate: (value) => {
-                                    // Check if the trimmed value is an empty string
-                                    if (value.trim() === '') {
-                                        return 'Comment cannot be empty';
-                                    }
-                                    return true;
-                                },
-                            }}
-                        />
-                        : 
-                        <>
-                            <Text style={[styles.commentText,{textAlign: 'center'}]}>{commentItem.commentText}</Text>
-                        </>
-                    }
+
+                <ScrollView style={styles.main}>
+                    {renderContent}
                 </ScrollView>
+                
                 <View style={styles.actions}>
-                    {commentMode == 'edit' ? 
+                {commentMode === 'edit' ? (
                     <>
-                        <TouchableOpacity
-                            style={[styles.btn, styles.cancelBtn]} onPress={closeModal}
-                        >
-                            <Text>Cancel</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={handleSubmit(editComment)}
-                            style={[styles.btn, styles.doneBtn]}
-                        >
-                            <Text>Done</Text>
-                        </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.btn, styles.cancelBtn]} onPress={closeModal}
+                    >
+                        <Text>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleSubmit(editComment)}
+                        style={[styles.btn, styles.doneBtn]}
+                    >
+                        <Text>Done</Text>
+                    </TouchableOpacity>
                     </>
-                    :  
+                ) : (
                     <>
-                        <TouchableOpacity style={[styles.btn, styles.deleteBtn]} onPress={()=>askConfirmDelete(commentItem.id)}>
-                            <Text>
-                                Delete
-                            </Text> 
-                        </TouchableOpacity>
-                        <TouchableOpacity style={[styles.btn, styles.editBtn]} onPress={() => setCommentMode('edit')}>
-                            <Text>
-                                Edit
-                            </Text> 
-                        </TouchableOpacity>
+                    <TouchableOpacity style={[styles.btn, styles.deleteBtn]} onPress={() => askConfirmDelete(commentItem.id)}>
+                        <Text>Delete</Text> 
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.btn, styles.editBtn]} onPress={() => setCommentMode('edit')}>
+                        <Text>Edit</Text> 
+                    </TouchableOpacity>
                     </>
-                    }
+                )}
                 </View>
             </View>
         </Modal>

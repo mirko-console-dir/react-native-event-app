@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, {useCallback, useState} from 'react'
 import { View, Text, TouchableOpacity,StyleSheet,LayoutAnimation } from 'react-native';
 
 import CollaboratorAvatar from '../avatars/CollaboratorAvatar';
@@ -22,14 +22,14 @@ const CollaboratorSelect: React.FC<SelectCollabProps> = ({ projectCollaboratorsE
     const [selected, setSelected] = useState(false)
     const [selectable, setSelectable] = useState(!projectCollaboratorsEmail?.includes(collaborator.email))
     
-    const toggleCollaboratorSelect = () =>{
+    const toggleCollaboratorSelect = useCallback(() =>{
         setSelected(!selected)
         if(!selected){
             onSelect(collaborator.email)
         } else {
             onDeselect(collaborator.email)
         }
-    }
+    },[selected])
     return (
         <TouchableOpacity style={{ marginRight:10,flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}
             onPress={() => selectable ? toggleCollaboratorSelect() : null}

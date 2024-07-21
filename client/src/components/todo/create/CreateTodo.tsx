@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -67,44 +67,39 @@ const CreateTodo = ({today}: StackProps) => {
     
     // Upload images
     const [loadingImage,setLoadingImage] = useState<Boolean>(false)
-    const [selectedImages, setSelectedImages] = useState<any>([]);
+    const [selectedImages, setSelectedImages] = useState<any[]>([]);
     const [isModalVisible, setModalVisible] = useState(false);
 
-    const handleImageSelected = async (imageUri: any) => {
-      setSelectedImages([...selectedImages, {uri: imageUri}]);
-      setModalVisible(false);
+    const handleImageSelected = useCallback(async (imageUri: any) => {
+      setSelectedImages(prevImages => [...prevImages, { uri: imageUri }]);
       // set form data images
       const existingImages = getValues("newImages")	
       if(existingImages) setValue('newImages', [...existingImages,imageUri])
       else setValue('newImages',[imageUri])
       // END set form data images
-    };
+    }, [getValues, setValue]);
 
-    const toggleModal = () => {
-      if(selectedImages.length > 1) {
-        return warning('Upload max 2 images for task')
+    const toggleModal = useCallback(() => {
+      if (selectedImages.length > 1) {
+        warning('Upload max 2 images for task');
       } else {
-        if(Platform.OS === 'android') {
-          setModalVisible(!isModalVisible);
-        } else {
-          setModalVisible(!isModalVisible);
-        }
+        setModalVisible(prev => !prev);
       }
-    };
+    }, [selectedImages, warning]);
 
-    const removeImage = (index: number) => {
-      const updatedImages = selectedImages.filter((_: any, i: number) => i !== index);
-      setSelectedImages(updatedImages)
-      // set form data images
-      const existingImages = getValues("newImages");	
-      existingImages.splice(index, 1);
-      setValue('newImages', [...existingImages])
-      // END set form data images
-    }
+    const removeImage = useCallback((index: number) => {
+      setSelectedImages(prevImages => prevImages.filter((_, i) => i !== index));
+  
+      const existingImages = getValues("newImages");
+      if (existingImages) {
+        existingImages.splice(index, 1);
+        setValue('newImages', [...existingImages]);
+      }
+    }, [getValues, setValue]);
     // END Upload images
 
     // Handle data form to send 
-    const fetchImageData = async (imageUri: any) => {
+    const fetchImageData = useCallback(async (imageUri: any) => {
       // Process the uploaded images
       const response : any = await fetch(imageUri);
       const originalFileName = response._bodyBlob._data.name;
@@ -118,12 +113,12 @@ const CreateTodo = ({today}: StackProps) => {
         originalFileName: originalFileName,
         caption: 'Image Caption' // You may replace this with your logic to get the caption
       };
-    }
+    },[])
 
     const [createTodo, { data, loading }] = useMutation(CREATE_TODO);
     const dispatch = useDispatch()
 
-    const handleCreateTodo = async (formData : InputTypes) => {
+    const handleCreateTodo = useCallback(async (formData : InputTypes) => {
       const {content, expireDate, newImages} = formData;
       if (!content.trim() || !expireDate) {
         if(!content.trim()){
@@ -172,46 +167,44 @@ const CreateTodo = ({today}: StackProps) => {
       } finally {
         setLoadingImage(false)
       }
-    }
+    }, [createTodo, dispatch, projectId, setError, clearErrors, reset, success, error, fetchImageData]);
     // END Handle data form to send 
 
     // Close keybord avoid conflict with data picker onChange
-    const closeKeybord = () => {
+    const closeKeyboard = useCallback(() => {
       Keyboard.dismiss()
-    }
-    const handleDateSelected = (date: string) => {
-      date ?? setSelectedDate(date);
-      
-      setValue('expireDate', date);
-      if(errors.expireDate){
-        clearErrors("expireDate") 
-      }
-      Keyboard.dismiss();
-    }
-    // END Close keybord avoid conflict with data picker onChange
+    },[])
 
-    /* const windowHeight = useWindowDimensions().height;
-    const [mainSectionHeight, setMainSectionHeight] = useState(windowHeight * 0.8); */
+    const handleDateSelected = useCallback((date: string) => {
+      if (date) {
+        setSelectedDate(date);
+        setValue('expireDate', date);
+        if (errors.expireDate) {
+          clearErrors("expireDate");
+        }
+        Keyboard.dismiss();
+      }
+    }, [setValue, errors, clearErrors]);
     
     // Carousel Modal for attached images
     const [carouselModalVisible, setCarouselModalVisible] = useState(false);
     const [carouselIndex, setCarouselIndex] = useState(0);
   
-    const openCarouselModal = (index: number) => {
+    const openCarouselModal = useCallback((index: number) => {
       setCarouselIndex(index);
       setCarouselModalVisible(true);
-    };
+    }, []);
   
-    const closeCarouselModal = () => {
+    const closeCarouselModal = useCallback(() => {
       setCarouselModalVisible(false);
-    };
-    // END Carousel Modal for attached images
-    // Save button
-    const SaveButtonTask = () => (
-      <SaveButton onPress={handleSubmit(handleCreateTodo)}/>
-    )
-    useNavigationOptions({headerRight: SaveButtonTask});
+    }, []);
   
+    const SaveButtonTask = useCallback(() => (
+      <SaveButton onPress={handleSubmit(handleCreateTodo)} />
+    ), [handleSubmit, handleCreateTodo]);
+    
+    useNavigationOptions({ headerRight: SaveButtonTask });
+
     // END Save button
     if(loading || loadingImage){
       return (
@@ -225,7 +218,7 @@ const CreateTodo = ({today}: StackProps) => {
            <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
-            <TouchableWithoutFeedback onPress={closeKeybord} >
+            <TouchableWithoutFeedback onPress={closeKeyboard} >
               <View style={styles.createTodoPage}>
                 <View style={styles.container}>
                   <Text style={[styles.textCenter, styles.h3, { marginTop: 15, marginBottom: 25}]}>Add Task for Event:{'\n'}{projectTitle}</Text>

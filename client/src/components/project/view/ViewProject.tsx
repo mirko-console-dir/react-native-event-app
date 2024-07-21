@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import { SafeAreaView, View, Text, FlatList, ImageBackground, Platform, TouchableOpacity, ScrollView } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import DatePicker from 'react-native-modern-datepicker';
@@ -33,37 +33,35 @@ const ViewProject = ({today}: StackProps) => {
     // Add Collaborator Modal
     const [isCollaboratorModalVisible, setCollaboratorModalVisible] = useState(false);
     const toggleCollaboratorModal = () => {
-        if(Platform.OS === 'android') {
-          setCollaboratorModalVisible(!isCollaboratorModalVisible);
-        } else {
-          setCollaboratorModalVisible(!isCollaboratorModalVisible);
-        }
+      setCollaboratorModalVisible(prev=>!prev)
     };
     // END Add Collaborator Modal
 
     // MoreIcon Modal Project
     const [modalProjectVisibility, setProjectModalVisibility] = useState<{ [key: string]: boolean }>({});
-    const openProjectModal = (projectId: string) => {
+    const openProjectModal = useCallback((projectId: string) => {
       setProjectModalVisibility((prev) => ({ ...prev, [projectId]: true }));
-    };
-    const closeProjectModal = (projectId: string) => {
+    },[]);
+
+    const closeProjectModal = useCallback((projectId: string) => {
       setProjectModalVisibility((prev) => ({ ...prev, [projectId]: false }));
-    };
+    },[]);
     // END MoreIcon Modal Project
 
-    const renderTaskItem = ({item, index, totalItems}: {item: Todo, index: number, totalItems: number}) => { 
+    const renderTaskItem = useCallback(({item, index, totalItems}: {item: Todo, index: number, totalItems: number}) => { 
       return (
         <React.Fragment>
           <TaskItem projectId={item.project} todoId={item.id} calendarView={false} todayTaskCalendarView={false}/>
           {index === totalItems - 1 && <View style={styles.extraSpaceForListItem} />}
         </React.Fragment>
         )
-    }
-    const handleCreateTask = () => {
-      navigation.navigate('TodoStack', {screen:'Create Task', params: { projectId: project.id, projectTitle: project.title, projectExpireDate: project.expireDate}})
-    }
+    },[])
 
-    const ProjectViewActions = () => {
+    const handleCreateTask = useCallback(() => {
+      navigation.navigate('TodoStack', {screen:'Create Task', params: { projectId: project.id, projectTitle: project.title, projectExpireDate: project.expireDate}})
+    }, [navigation, project?.id, project?.title, project?.expireDate]);
+
+    const ProjectViewActions = useCallback(() => {
       return (
               <View style={styles.viewProjectPage.header.projectViewActions}>
                   <TouchableOpacity onPress={toggleCollaboratorModal} 
@@ -77,8 +75,8 @@ const ViewProject = ({today}: StackProps) => {
                     <Feather name={'more-horizontal'} size={25} />
                   </TouchableOpacity>
               </View>
-              )
-    }
+      )
+    }, [toggleCollaboratorModal, openProjectModal, project?.id]);
     
     useNavigationOptions({headerRight: ProjectViewActions});
 
@@ -86,13 +84,13 @@ const ViewProject = ({today}: StackProps) => {
         <SafeAreaView style={{flex:1}}>
           <View style={styles.viewProjectPage}>
             <View style={styles.container}>
-              <Text style={[styles.h1, styles.viewProjectPage.header.title, styles.textCenter]}>{project.title}</Text>
-                {project.collaborators?.length ? 
+              <Text style={[styles.h1, styles.viewProjectPage.header.title, styles.textCenter]}>{project?.title}</Text>
+                {project?.collaborators?.length ? 
                     <View style={styles.viewProjectPage.header}> 
                       <View style={styles.viewProjectPage.header.collaboratorsArea}>
                             <Text style={styles.h3}>Collaborators</Text>
                             <View style={styles.viewProjectPage.header.collaboratorsArea.avatarsArea}>
-                                {project.collaborators.map((collaborator: any) =>
+                                {project?.collaborators.map((collaborator: any) =>
                                     <CollaboratorAvatar 
                                       key={collaborator.id} 
                                       collaborator={collaborator} 
@@ -137,22 +135,22 @@ const ViewProject = ({today}: StackProps) => {
                 </View>
             </View>
             <FlatList
-                data={project.todos.slice()}
+                data={project?.todos.slice()}
                 keyExtractor={(item :Todo) => item.id}
                 renderItem={({ item, index }) => renderTaskItem({ item, index, totalItems: project.todos.length })}
                 style={[styles.todoItemList, {marginTop: 15}]}
             />     
             <ProjectItemMoreIconModal
-              isVisible={modalProjectVisibility[project.id] || false}
-              onClose={() => closeProjectModal(project.id)}
-              onDelete={() => navigation.goBack()}
+              isVisible={modalProjectVisibility[project?.id] || false}
+              onClose={() => closeProjectModal(project?.id)}
+              onDelete={() => {closeProjectModal(project?.id); navigation.goBack()}}
               projectId={projectId}
-              projectTitle={project.title}
+              projectTitle={project?.title}
             />
             <AddCollaboratorsModal 
               isVisible={isCollaboratorModalVisible} 
               onClose={toggleCollaboratorModal} 
-              projectId={project.id} 
+              projectId={project?.id} 
             />
             <PlusButton onPress={handleCreateTask}/>
           </View>

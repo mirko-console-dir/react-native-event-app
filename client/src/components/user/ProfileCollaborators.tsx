@@ -1,4 +1,4 @@
-import React, {useState} from 'react'
+import React, {useCallback, useState} from 'react'
 import {
     SafeAreaView,
     View,
@@ -21,23 +21,19 @@ import AddCollaboratorModal from '../modals/user/AddCollaboratorModal';
 const ProfileCollaborators = () => {
     // Add Collaborator Modal
     const [isCollaboratorModalVisible, setCollaboratorModalVisible] = useState(false);
-    const toggleCollaboratorModal = () => {
-        if(Platform.OS === 'android') {
-          setCollaboratorModalVisible(!isCollaboratorModalVisible);
-        } else {
-          setCollaboratorModalVisible(!isCollaboratorModalVisible);
-        }
-    };
+    const toggleCollaboratorModal = useCallback(() => {
+        setCollaboratorModalVisible(prev=>!prev)
+    },[]);
     // END Add Collaborator Modal
     const user: UserLoggedIn | any = useSelector((state: RootState) => {
       return state.user.user
     });
 
-    const renderCollaborator = ({item}:{item: Collaborator}) => {
+    const renderCollaborator = useCallback(({item}:{item: Collaborator}) => {
         return (
             <CollaboratorDetails collaborator={item}/>
         )
-    }
+    },[])
     return (
         <SafeAreaView style={{flex:1}}>
             <View style={styles.profileCollaboratorsPage}>
