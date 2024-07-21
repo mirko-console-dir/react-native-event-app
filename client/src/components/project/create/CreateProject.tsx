@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -58,7 +58,7 @@ const CreateProject = ({today}: StackProps) => {
   }); 
 
   // Close keybord avoid conflict with data picker onChange and setValue form
-  const handleDateSelected = (date: string) => {
+  const handleDateSelected = useCallback((date: string) => {
     date ?? setSelectedDate(date);
     
     setValue('expireDate', date);
@@ -66,24 +66,24 @@ const CreateProject = ({today}: StackProps) => {
       clearErrors("expireDate") 
     }
     Keyboard.dismiss();
-  }
+  }, [clearErrors, errors.expireDate, setValue]);
   // END Close keybord avoid conflict with data picker onChange and setValue form
   // Ask if want to add collaborator 
   const [collaboratorModal, setCollaboratorModal] = useState(false)
-  const toggleAddCollabModal = () =>{
+  const toggleAddCollabModal = useCallback(() =>{
     setCollaboratorModal(prev=> !prev)
-  }
-  const askCollaborator = () =>
+  },[])
+  const askCollaborator = useCallback(() =>
     Alert.alert('Add a Collaborator for the task?', 'Collaborate with other users', [
       {text: 'Maybe Later', onPress: () => {
         navigation.navigate('TodoStack', {screen:'Create Task', params: { projectId: newProjectCreated.projectId, projectTitle: newProjectCreated.projectTitle, projectExpireDate: newProjectCreated.expireDate}})
         }
       },
       {text: 'OK', onPress: () => toggleAddCollabModal()}
-    ]);
+    ]),[navigation, newProjectCreated, toggleAddCollabModal]);
    // END Ask if want to add collaborator 
 
-  const handleCreateProject = async (formData: InputTypes) => {
+  const handleCreateProject = useCallback(async (formData: InputTypes) => {
     const {title, expireDate} = formData
 
     if (title.trim() === '' || !expireDate) {
@@ -122,19 +122,19 @@ const CreateProject = ({today}: StackProps) => {
     } catch (err) {
       errorToast('Error creating Event');
     }  
-  };
+  }, [askCollaborator, createProject, dispatch, errorToast, setError, success]);
 
  
-  const resetValueForm = () => {
+  const resetValueForm = useCallback(() => {
     reset({ title: '', expireDate: '' })
     clearErrors("title") 
     clearErrors("expireDate") 
     setSelectedDate(null)
-  };
+  }, [clearErrors, reset]);
 
-  const SaveButtonProject = () => (
+  const SaveButtonProject = useCallback(() => (
       <SaveButton onPress={handleSubmit(handleCreateProject)}/>
-  )
+  ),[handleSubmit,handleCreateProject])
   useNavigationOptions({headerRight: SaveButtonProject});
 
 

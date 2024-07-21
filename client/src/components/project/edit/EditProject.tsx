@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import {
   SafeAreaView,
@@ -59,15 +59,15 @@ const EditProject = ({today}: StackProps) => {
     }
   });  
 
-  const handleDateSelected = (date: string) => {
+  const handleDateSelected = useCallback((date: string) => {
     setValue('expireDate', date);
     Keyboard.dismiss();
-  }
+  },[setValue] )
 
   const [editProject] = useMutation(EDIT_PROJECT);
   const dispatch = useDispatch();
 
-  const handleSubmitEditProject = async (formData: any) => {
+  const handleSubmitEditProject = useCallback(async (formData: any) => {
     const {editedTitle, expireDate} = formData
     if(project.title == editedTitle && project.expireDate == expireDate) return warning('Nothing to edit')
 
@@ -89,20 +89,17 @@ const EditProject = ({today}: StackProps) => {
         error('Something wrong')
       }
    
-  };
+  }, [dispatch, editProject, error, project.title, project.expireDate, projectId, success, warning]);
+
 
   // Add Collaborator Modal
   const [isCollaboratorModalVisible, setCollaboratorModalVisible] = useState(false);
-  const toggleCollaboratorModal = () => {
-      if(Platform.OS === 'android') {
-        setCollaboratorModalVisible(!isCollaboratorModalVisible);
-      } else {
-        setCollaboratorModalVisible(!isCollaboratorModalVisible);
-      }
-  };
+  const toggleCollaboratorModal = useCallback(() => {
+        setCollaboratorModalVisible(prev=>!prev);
+  },[]);
   // END Add Collaborator Modal
 
-  const ProjectEditActions = () => {
+  const ProjectEditActions = useCallback(() => {
     return (
       <View style={styles.viewProjectPage.header.projectViewActions}>
           <TouchableOpacity onPress={toggleCollaboratorModal}>
@@ -111,18 +108,13 @@ const EditProject = ({today}: StackProps) => {
           <SaveButton onPress={handleSubmit(handleSubmitEditProject)}/>
       </View>
     )
-  }
+  },[handleSubmit, handleSubmitEditProject, toggleCollaboratorModal])
+
   useNavigationOptions({headerRight: ProjectEditActions});
-
-  const askConfirmDelete = (collaboratorId: string, nameCollaborator: string) =>
-    Alert.alert('Delete Collaborator?', `${nameCollaborator} will not be able to see the project and relative tasks`, [
-      {text: 'Cancel', onPress: () => {}},
-      {text: 'OK', onPress: () => deleteCollaborator(collaboratorId)}
-    ]);
-
+  
   const [deleteCollaboratorProject] = useMutation(DELETE_COLLABORATOR_PROJECT);
 
-  const deleteCollaborator = async (collaboratorId: string) => {
+  const deleteCollaborator = useCallback(async (collaboratorId: string) => {
     try{
       const deletedCollaborator = await deleteCollaboratorProject({
         variables: {
@@ -137,9 +129,16 @@ const EditProject = ({today}: StackProps) => {
     }catch(err){
       error('Something Wrong')
     }
-  }
+  }, [deleteCollaboratorProject, dispatch, projectId, success, error]);
 
-  const renderCollaborator = ({item}: any) => {
+  const askConfirmDelete = useCallback((collaboratorId: string, nameCollaborator: string) =>
+    Alert.alert('Delete Collaborator?', `${nameCollaborator} will not be able to see the project and relative tasks`, [
+      {text: 'Cancel', onPress: () => {}},
+      {text: 'OK', onPress: () => deleteCollaborator(collaboratorId)}
+    ]),[deleteCollaborator]);
+
+
+  const renderCollaborator = useCallback(({item}: any) => {
     return (
       <View style={{paddingVertical: 5,flexDirection:'row', justifyContent: 'space-between', alignItems: 'center'}}>
             <CollaboratorAvatar 
@@ -155,7 +154,7 @@ const EditProject = ({today}: StackProps) => {
           </TouchableOpacity>
       </View>
     )
-  }
+  },[askConfirmDelete])
 
   return (
       <SafeAreaView style={{flex:1}}>

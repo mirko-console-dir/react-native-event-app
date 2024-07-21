@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet,LayoutAnimation,Alert } from 'react-native';
 import Modal from "react-native-modal";
 import { useDispatch } from 'react-redux';
@@ -6,6 +6,7 @@ import { addCollaboratorUser } from '../../../reduxReducers/userSlice';
 import { useForm, Controller } from 'react-hook-form';
 import { useMutation } from '@apollo/client';
 import { ADD_COLLABORATOR_USER } from '../../../../apollo/mutations/user/userMutations';
+import { useToast } from '../../../utils/toastContext/ToastContext';
 
 interface AddCollaboratorModalProps {
   isVisible: boolean;
@@ -15,6 +16,8 @@ interface InputTypes {
   collaboratorEmail: string;
 }
 const AddCollaboratorModal: React.FC<AddCollaboratorModalProps> = ({ isVisible, onClose }) => {
+  const { success, error, warning } = useToast();
+
   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
   
   const [addCollaboratorToUser] = useMutation(ADD_COLLABORATOR_USER);
@@ -22,7 +25,7 @@ const AddCollaboratorModal: React.FC<AddCollaboratorModalProps> = ({ isVisible, 
   const { control, handleSubmit, reset, formState: { errors }, setValue, setError,clearErrors } = useForm<InputTypes>();  
 
   /* Add collaborator manually */
-  const handleAddCollaborator = async (formData: InputTypes) => {
+  const handleAddCollaborator = useCallback(async (formData: InputTypes) => {
     const {collaboratorEmail} = formData
 
     try {
@@ -38,17 +41,18 @@ const AddCollaboratorModal: React.FC<AddCollaboratorModalProps> = ({ isVisible, 
         dispatch(addCollaboratorUser({collaborators: [collaborator]}))
       }
       reset()
+      success('Collaborator added')
       onClose()
-    } catch (error) {
-      console.error('this is the error',error);
-      // Handle the error (e.g., show an error message)
+    } catch (err) {
+      error('Something wrong');
     }
-  };
+  }, [dispatch, reset, onClose, addCollaboratorToUser, addCollaboratorUser, error, success]);
   /* END Add collaborator manually */
-  const close = () => {
+  const close = useCallback(() => {
     reset()
     onClose()
-  }
+  },[reset, onClose])
+
   return (
       <Modal isVisible={isVisible} onBackdropPress={close}>
         <View style={styles.modalContent}>

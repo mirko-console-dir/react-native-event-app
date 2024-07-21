@@ -83,9 +83,9 @@ const EditMemo = () => {
     }
   }, [memo, memoId, editMemo, dispatch, success, warning, error, reset]);
 
-  const SaveButtonMemo = () => (
+  const SaveButtonMemo = useCallback(() => (
       <SaveButton onPress={handleSubmit(handleEditMemo)}/>
-  )
+  ),[handleSubmit,handleEditMemo])
   useNavigationOptions({headerRight: SaveButtonMemo});
 
 

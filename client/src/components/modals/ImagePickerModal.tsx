@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { View, Platform, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Modal from "react-native-modal";
 import * as ImagePicker from 'expo-image-picker';
@@ -15,7 +15,7 @@ interface ImagePickerModalProps {
 
 const ImagePickerModal: React.FC<ImagePickerModalProps> = ({ isVisible, onClose, onImageSelected,onImageTaken }) => {
 
-  const pickImage = async () => {
+  const pickImage = useCallback(async () => {
 
     // Check and request gallery permission here before launching the image library
     /* REACTIVATE THE PERMISSIOOOOOOOOOON  */
@@ -38,9 +38,9 @@ const ImagePickerModal: React.FC<ImagePickerModalProps> = ({ isVisible, onClose,
       onImageSelected(result.assets[0].uri);
       onClose(); // Close the modal
     }
-  };
+  },[onClose, onImageSelected]);
 
-  const openCamera = async () => {
+  const openCamera = useCallback(async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       console.log('Camera permission not granted');
@@ -57,7 +57,7 @@ const ImagePickerModal: React.FC<ImagePickerModalProps> = ({ isVisible, onClose,
       onImageTaken(result.assets[0].uri);
     }
     onClose();
-  };
+  },[onImageTaken, onClose]);
 
 
   return (

@@ -62,9 +62,9 @@ const CreateMemo = () => {
   },[createMemo, dispatch, reset]);
 
     // Save button
-    const SaveButtonMemo = () => (
+    const SaveButtonMemo = useCallback(() => (
       <SaveButton onPress={handleSubmit(handleCreateMemo)}/>
-    )
+    ), [handleCreateMemo, handleSubmit]);
     useNavigationOptions({headerRight: SaveButtonMemo});
 
 

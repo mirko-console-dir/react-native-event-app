@@ -36,7 +36,7 @@ const Profile = () => {
       {text: 'OK', onPress: () => handleSignOut()}
     ]), []);
 
-  const handleSignOut =  useCallback(async() => {
+  const handleSignOut = useCallback(async() => {
     try {
       // Remove userAccessToken from SecureStore
       await AsyncStorage.removeItem('user')

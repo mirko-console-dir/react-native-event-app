@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { SafeAreaView, View, Text, FlatList } from 'react-native';
 import styles from '../../../styles';
 
@@ -19,11 +19,11 @@ const ViewTodayTasks = ({today}: StackProps) => {
 
   // END to open the relative project modal 
 
-  const renderTaskItem = ({ item }: { item: Todo }) => {
+  const renderTaskItem = useCallback(({ item }: { item: Todo }) => {
     return  ( 
         <TaskItem projectId={item.project} todoId={item.id} calendarView={true} todayTaskCalendarView={true}/>
     )
-  }
+  },[])
 
   return (
     <SafeAreaView style={{flex:1}}>

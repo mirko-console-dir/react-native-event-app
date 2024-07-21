@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import { SafeAreaView, View, Text, FlatList,TouchableOpacity } from 'react-native';
 import DatePicker from 'react-native-modern-datepicker';
 import { useNavigation,CommonActions } from '@react-navigation/native';
@@ -25,17 +25,17 @@ const ViewCalendarProjects = ({today}: StackProps) => {
   const { selectedProjectsByDate, selectedTasksByDate } = useFilteredProjectsTodosByDate(selectedDate);
   const { projectsDate, todosDate } = useExtractExpDatesForCalendar();
 
-  const renderProjectItem =  ({item}: {item: Project}) => { 
+  const renderProjectItem =  useCallback(({item}: {item: Project}) => { 
     return <ProjectItemBox project={item} />;
-  }
+  },[])
 
-  const renderTaskItem = ({ item }: { item: Todo }) => {
+  const renderTaskItem = useCallback(({ item }: { item: Todo }) => {
     return  ( 
         <TaskItem projectId={item.project} todoId={item.id} calendarView={true} todayTaskCalendarView={false}/>
     )
-  }
+  },[])
     // Create button
-    const CreateEventButton = () => (
+    const CreateEventButton = useCallback(() => (
       <TouchableOpacity style={{flexDirection: 'column', justifyContent: 'center', marginRight: 15}} 
       onPress={() => navigation.dispatch(
         CommonActions.reset({
@@ -48,7 +48,7 @@ const ViewCalendarProjects = ({today}: StackProps) => {
     >
       <Feather style={{alignSelf: 'center'}} name={"plus"} size={25}  color='black'/>
     </TouchableOpacity>
-    )
+    ),[navigation])
     useNavigationOptions({headerRight: CreateEventButton});
     // END Create button
   return (

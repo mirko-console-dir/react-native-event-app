@@ -1,5 +1,5 @@
-import React, {useEffect, useState}from 'react';
-import { TouchableWithoutFeedback,View, Text, TextInput, TouchableOpacity, StyleSheet,LayoutAnimation,FlatList } from 'react-native';
+import React, {useCallback, useEffect, useState}from 'react';
+import { TouchableWithoutFeedback,View, Text, TextInput, TouchableOpacity, StyleSheet,LayoutAnimation,FlatList, ActivityIndicator } from 'react-native';
 import Modal from "react-native-modal";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -54,13 +54,37 @@ const AddCollaboratorsModal: React.FC<AddCollaboratorsModalProps> = ({ isVisible
 
   const [historyCollaborators, setHistoryCollaborators] = useState(false);
   const [errorCollaboratorList, setErrorCollaboratorList] = useState(false);
+  /* Add collaborators from list */
+  const [collaboratorsEmailSelected, setCollaboratorsEmailSelected] = useState<string[]>([]);
 
+  const toggleHistoryCollaborators = useCallback(() => {
+    if (historyCollaborators) {
+      setCollaboratorsEmailSelected([]);
+    }
+    setHistoryCollaborators(prev => !prev);
+  }, [historyCollaborators]);
+
+  const handleAddSelectedCollaborator = useCallback((email: string) => {
+    setCollaboratorsEmailSelected(prevSelected => {
+      const updatedList = [...prevSelected, email];
+      setErrorCollaboratorList(false);
+      return updatedList;
+    });
+  }, []);
+
+  const handleRemoveSelectedCollaborator = useCallback((email: string) => {
+    setCollaboratorsEmailSelected(prevSelected => {
+      const updatedList = prevSelected.filter(selectedEmail => selectedEmail !== email);
+      setErrorCollaboratorList(false);
+      return updatedList;
+    });
+  }, []);
+  const [loading, setLoading] = useState(false)
   /* Add collaborator manually */
-  const handleAddCollaborator = async (formData: InputTypes) => {
+  const handleAddCollaborator = useCallback(async (formData: InputTypes) => {
     const {collaboratorEmail} = formData
-
     try {
-
+      setLoading(prev=>!prev)
       if(historyCollaborators && collaboratorsEmailSelected.length == 0){
         return setErrorCollaboratorList(true)
       } else {
@@ -86,30 +110,14 @@ const AddCollaboratorsModal: React.FC<AddCollaboratorsModalProps> = ({ isVisible
       onClose()
     } catch (err) {
       error(`Error adding Collaborator`)
+    } finally {
+      setLoading(prev=>!prev)
     }
-  };
+
+  }, [historyCollaborators, collaboratorsEmailSelected, addCollaboratorToProject, projectId, dispatch, reset, success, error, onClose]);
   /* END Add collaborator manually */
 
-  /* Add collaborators from list */
-  const [collaboratorsEmailSelected, setCollaboratorsEmailSelected] = useState<string[]>([]);
-
-  useEffect(()=>{
-    if(!historyCollaborators){
-      setCollaboratorsEmailSelected([])
-    }
-  }, [historyCollaborators])
-
-  useEffect(()=>{
-    setErrorCollaboratorList(false)
-  }, [collaboratorsEmailSelected])
-
-  const handleAddSelectedCollaborator = (email: string) => {
-    setCollaboratorsEmailSelected(prevSelected => [...prevSelected, email]);
-  };
-  const handleRemoveSelectedCollaborator = (email: string) => {
-    setCollaboratorsEmailSelected(collaboratorsEmailSelected.filter(selectedEmail => selectedEmail !== email));
-  };
-  const renderPrevCollaborator = ({ item }:any) => {
+  const renderPrevCollaborator = useCallback(({ item }:any) => {
     return (
       <CollaboratorSelect 
         collaborator={item}
@@ -118,14 +126,22 @@ const AddCollaboratorsModal: React.FC<AddCollaboratorsModalProps> = ({ isVisible
         onDeselect={(email: string) => handleRemoveSelectedCollaborator(email)}
       />
     );
-  };
+  }, [currentProjectCollaboratorsEmail, handleAddSelectedCollaborator, handleRemoveSelectedCollaborator]);
   /* END Add collaborators from list */
 
-  const close = () => {
-    reset()
+  const close = useCallback(() => {
+    reset();
     setCollaboratorsEmailSelected([]);
     setHistoryCollaborators(false);
-    onClose()
+    onClose();
+  }, [reset, onClose]);
+  
+  if(loading){
+    return (
+        <View style={{flex:1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
+            <ActivityIndicator size="large" style={{ transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }] }} /> 
+        </View>
+    )
   }
   return (
       <Modal isVisible={isVisible} onBackdropPress={close} >
@@ -173,7 +189,7 @@ const AddCollaboratorsModal: React.FC<AddCollaboratorsModalProps> = ({ isVisible
               </TouchableOpacity>
               <TouchableOpacity
                 style={{ borderWidth: 0.3,paddingHorizontal: 10, paddingVertical: 10, borderRadius: 20, flexDirection: 'row', alignItems: 'center', gap: 5, marginLeft: 'auto', marginTop: 20}}
-                onPress={() => setHistoryCollaborators(!historyCollaborators)}
+                onPress={toggleHistoryCollaborators}
               >
                     <MaterialCommunityIcons name={"history"} size={25}  color='black'/>
                     <Text>Previous Collaborators</Text>
@@ -203,7 +219,7 @@ const AddCollaboratorsModal: React.FC<AddCollaboratorsModalProps> = ({ isVisible
                 </TouchableOpacity>: null
               }
               <TouchableOpacity style={{ borderWidth: 0.3,paddingHorizontal: 25, paddingVertical: 10, borderRadius: 20, alignSelf: 'flex-end', marginTop: 20, flexDirection: 'row', alignItems: 'center', gap: 5 }} 
-                onPress={()=>setHistoryCollaborators(!historyCollaborators)}
+                onPress={toggleHistoryCollaborators}
               >
                 <Text>Back</Text>
               </TouchableOpacity>

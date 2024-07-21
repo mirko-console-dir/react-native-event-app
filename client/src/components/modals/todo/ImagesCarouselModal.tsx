@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, Image, Dimensions, SafeAreaView, TouchableOpacity, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
 import Carousel from 'react-native-reanimated-carousel';
@@ -15,13 +15,16 @@ const ImagesCarouselModal: React.FC<ImagesCarouselModalProps> = ({ isVisible, im
   const width = Dimensions.get('window').width;
   const height = Dimensions.get('window').height; 
   // Manipulate index to render correct order 
-  const adjustedImages = [...images.slice(selectedIndex), ...images.slice(0, selectedIndex)];
-
-  const renderCarouselItem = ({ item }: { item: any }) => (    
+  const adjustedImages = useMemo(() => [
+    ...images.slice(selectedIndex),
+    ...images.slice(0, selectedIndex)
+  ], [images, selectedIndex]);
+  
+  const renderCarouselItem = useCallback(({ item }: { item: any }) => (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <Image source={{ uri: item.url ? item.url : item.uri }} style={{ width: '100%', height: '100%', resizeMode: 'contain' }} />
     </View>
-  );
+  ), []);
 
   const [currentImageFeedback, setCurrentImageFeedback] = useState(selectedIndex + 1);
 

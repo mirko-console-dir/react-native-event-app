@@ -27,7 +27,7 @@ const Memos = () => {
   }, []);
   // END to open the relative memo modal 
 
-  const renderItem = ({item}: {item: Memo}) => (
+  const renderItem = useCallback(({item}: {item: Memo}) => (
       <View style={styles.viewMemosPage.main.memosList.memoItem} key={item.id}>
         <MemoMoreIconModal
           isVisible={modalVisibility[item.id] || false}
@@ -48,7 +48,7 @@ const Memos = () => {
           </View>
         </TouchableOpacity>
       </View>
-  );
+  ),[closeModal, openModal, navigation]);
 
   return (
     <SafeAreaView style={{flex:1}}>

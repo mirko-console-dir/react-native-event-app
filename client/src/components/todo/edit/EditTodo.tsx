@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useRoute,useNavigation } from '@react-navigation/native';
 import { SafeAreaView, Text, TextInput, TouchableOpacity, Image,Keyboard, KeyboardAvoidingView, TouchableWithoutFeedback, View, Platform,ActivityIndicator,Alert } from 'react-native';
 import DatePicker from 'react-native-modern-datepicker';
@@ -62,10 +62,10 @@ const EditTodo = ({today}: StackProps) => {
   const [loadingImage,setLoadingImage] = useState<Boolean>(false)
   
  
-  const handleDateSelected = (date: string) => {
+  const handleDateSelected = useCallback((date: string) => {
     setValue('expireDate', date);
     Keyboard.dismiss();
-  }
+  },[setValue])
 
   const { data: { getTodoImages = [] } = {}, loading } = useQuery(GET_TODO_IMAGES, {
     variables: { todoId: todoId },
@@ -73,7 +73,7 @@ const EditTodo = ({today}: StackProps) => {
 
   const [allImages, setAllImages] = useState<any>(getTodoImages)
   // Handle data to send image
-  const fetchImageData = async (imageUri: any) => {
+  const fetchImageData = useCallback(async (imageUri: any) => {
     // Process the uploaded images
     const response : any = await fetch(imageUri);
     const originalFileName = response._bodyBlob._data.name;
@@ -86,34 +86,31 @@ const EditTodo = ({today}: StackProps) => {
       originalFileName: originalFileName,
       caption: 'Image Caption' // You may replace this with your logic to get the caption
     };
-  }
+  },[])
   //END  Handle data to send image
   
   // Upload images
   const [isModalImagePickerVisible, setModalImgPickVisible] = useState(false);
-  
-  const handleImageSelected = (imageUri: any) => {
+  const toggleImagePickerModal = useCallback(() => {
+    if(allImages.length > 1) {
+      Alert.alert('You can upload max 2 images for task')
+    } else {
+      setModalImgPickVisible(prev=>!prev);
+    }
+  },[]);
+
+  const handleImageSelected = useCallback((imageUri: any) => {
     setAllImages((prevImages:any) => [...prevImages, {uri: imageUri}]);
-    setModalImgPickVisible(false); 
     // set form data images
     const existingImages = getValues("newImages")	
     if(existingImages) setValue('newImages', [...existingImages,imageUri])
     else setValue('newImages',[imageUri])
     // END set form data images
-  };
+  }, [getValues, setValue]);
 
-  const toggleImagePickerModal = () => {
-    if(allImages.length > 1) {
-      Alert.alert('You can upload max 2 images for task')
-    } else {
-      if(Platform.OS === 'android') {
-        setModalImgPickVisible(!isModalImagePickerVisible);
-      } else {
-        setModalImgPickVisible(!isModalImagePickerVisible);
-      }
-    }
-  };
-  const removeImage = (index: number) => {
+
+
+  const removeImage = useCallback((index: number) => {
     const updatedImages = allImages.filter((_: any, i: number) => i !== index);
     setAllImages(updatedImages)
     // set form data images
@@ -121,8 +118,9 @@ const EditTodo = ({today}: StackProps) => {
     existingImages.splice(index, 1);
     setValue('newImages', [...existingImages])
     // END set form data images
-  }
+  }, [allImages, getValues, setValue]);
   // END Upload images
+
   // Carousel Modal for attached images
   const [carouselModalVisible, setCarouselModalVisible] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -135,12 +133,6 @@ const EditTodo = ({today}: StackProps) => {
   };
   // END Carousel Modal for attached images
   // Delete image 
-  const askConfirmDelete = (todoId: string, imageId: string, imageName: string, index: number) =>
-    Alert.alert('Delete Image?', '', [
-      {text: 'Cancel', onPress: () => {}},
-      {text: 'OK', onPress: () => deleteImage(todoId, imageId, imageName, index)}
-    ]);
-
   const [deleteTaskImage] = useMutation(DELETE_IMAGE_TODO)
   const deleteImage = async (todoId: string, imageId: string, imageName: string, index:number) => {
     try {
@@ -158,10 +150,17 @@ const EditTodo = ({today}: StackProps) => {
       error('Cannot Remove Image')
     }
   }
+  const askConfirmDelete = useCallback((todoId: string, imageId: string, imageName: string, index: number) =>
+    Alert.alert('Delete Image?', '', [
+      {text: 'Cancel', onPress: () => {}},
+      {text: 'OK', onPress: () => deleteImage(todoId, imageId, imageName, index)}
+    ]),[deleteImage])
+
+
   // END Delete image 
   const [editTodo] = useMutation(EDIT_TODO);
 
-  const handleSubmitEditTodo = async (formData: InputTypes) => {
+  const handleSubmitEditTodo = useCallback(async (formData: InputTypes) => {
     const {editedContent, expireDate, newImages} = formData;
 
     if(todo.content == editedContent || todo.expireDate == expireDate || newImages.length < 1) return warning('Nothing to change')
@@ -209,14 +208,14 @@ const EditTodo = ({today}: StackProps) => {
       } finally {
         setLoadingImage(false)
       }
-  };
+  }, [todo, allImages, dispatch, editTodo, success, warning, error, clearErrors, projectId]);
+  
   // Save button
-  const SaveButtonTask = () => (
+  const SaveButtonTask = useCallback(() => (
     <SaveButton onPress={handleSubmit(handleSubmitEditTodo)}/>
-  )
+  ),[handleSubmit,handleSubmitEditTodo])
   useNavigationOptions({headerRight: SaveButtonTask});
   // END Save button
-
   
   if(loading || loadingImage){
       return (
