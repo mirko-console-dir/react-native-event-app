@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Alert } from 'react-native';
 import Modal from 'react-native-modal';
 import styles from '../../../styles';
@@ -19,12 +19,12 @@ interface TodoItemMoreIconModalProps {
 }
 
 const TodoItemMoreIconModal: React.FC<TodoItemMoreIconModalProps> = ({ isVisible, onClose, onEdit, todoId, todoContent, projectId }) => {
-  const { success, error, warning } = useToast();
+  const { success, error } = useToast();
 
   const [deleteTodoMutation] = useMutation(DELETE_TODO);
   const dispatch = useDispatch();
 
-  const deleteTodo = useCallback(async () => {
+  const deleteTodo = async () => {
     try {
       const { data } = await deleteTodoMutation({
         variables: {
@@ -39,13 +39,13 @@ const TodoItemMoreIconModal: React.FC<TodoItemMoreIconModalProps> = ({ isVisible
     }finally{
       onClose();
     }
-  },[projectId,todoId,success,error]);
+  }
 
-  const askConfirmDelete = useCallback(() =>
+  const askConfirmDelete = () =>
     Alert.alert('Delete Task?', '', [
       {text: 'Cancel', onPress: () => {}},
       {text: 'OK', onPress: () => deleteTodo()}
-  ]),[deleteTodo]);
+  ]);
 
   return (
     <Modal isVisible={isVisible} onBackdropPress={onClose}>

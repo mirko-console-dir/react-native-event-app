@@ -1,9 +1,9 @@
-import React, {useCallback, useState} from 'react'
-import { View, Text, TouchableOpacity,StyleSheet,LayoutAnimation } from 'react-native';
+import React, { useState} from 'react'
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 import CollaboratorAvatar from '../avatars/CollaboratorAvatar';
 import Checkbox from '../checkbox';
-import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 type SelectCollabProps = {
     collaborator: {
@@ -22,19 +22,19 @@ const CollaboratorSelect: React.FC<SelectCollabProps> = ({ projectCollaboratorsE
     const [selected, setSelected] = useState(false)
     const [selectable, setSelectable] = useState(!projectCollaboratorsEmail?.includes(collaborator.email))
     
-    const toggleCollaboratorSelect = useCallback(() =>{
+    const toggleCollaboratorSelect = () =>{
         setSelected(!selected)
         if(!selected){
             onSelect(collaborator.email)
         } else {
             onDeselect(collaborator.email)
         }
-    },[selected])
+    }
     return (
-        <TouchableOpacity style={{ marginRight:10,flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-start'}}
+        <TouchableOpacity style={styles.container}
             onPress={() => selectable ? toggleCollaboratorSelect() : null}
         >
-            <View style={{ flex: 1 ,flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <View style={styles.content}>
                 { selectable &&
                     <Checkbox
                         isChecked={selected}
@@ -42,22 +42,33 @@ const CollaboratorSelect: React.FC<SelectCollabProps> = ({ projectCollaboratorsE
                     /> 
                 }
                 { !selectable &&
-                    <View style={{paddingVertical:5,paddingHorizontal: 10}}>
+                    <View style={styles.icon}>
                         <MaterialCommunityIcons name={'circle-slice-8'} size={30}/> 
                     </View>
                 }
                 <Text>{collaborator.email}</Text>
-                <View style={{ marginLeft: 'auto'}}>
+                <View style={styles.avatarContainer}>
                     <CollaboratorAvatar 
                         key={collaborator.id} 
                         collaborator={collaborator} 
-                        style={{width: 30, height: 30, borderRadius: 50}}
+                        style={styles.avatar}
                     />
                 </View>
             </View>
         </TouchableOpacity>
     )
 }
-
+const styles = StyleSheet.create({
+    container: { 
+        marginRight:10,
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'flex-start'
+    },
+    content: { flex: 1 ,flexDirection: 'row', alignItems: 'center', gap: 10 },
+    icon: {paddingVertical:5,paddingHorizontal: 10},
+    avatarContainer: { marginLeft: 'auto'},
+    avatar: {width: 30, height: 30, borderRadius: 50}
+})
 
 export default CollaboratorSelect

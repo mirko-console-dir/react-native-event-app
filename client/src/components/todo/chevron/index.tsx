@@ -20,4 +20,4 @@ const Chevron = (props: ChevronProps) => {
   )
 }
 
-export default Chevron
+export default React.memo(Chevron)

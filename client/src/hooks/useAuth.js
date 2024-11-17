@@ -36,7 +36,6 @@ const useAuth = () => {
         }
       } catch (error) {
         console.error('Error refresh token client:', error);
-
       }
     }
     const checkAuthStatus = async () => {
@@ -67,7 +66,9 @@ const useAuth = () => {
           if (!usr){
             await askFreshToken(token)
           }
-        } 
+        } else {
+          return
+        }
       } catch (error) {
         console.error('Error checking auth status:', error);
       } finally {

@@ -1,10 +1,9 @@
-import React, { useCallback } from 'react';
-import { View, Platform, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Modal from "react-native-modal";
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Camera, CameraType } from 'expo-camera'; // Import Camera from expo-camera
+import { Camera } from 'expo-camera'; // Import Camera from expo-camera
 
 interface ImagePickerModalProps {
   isVisible: boolean;
@@ -13,13 +12,11 @@ interface ImagePickerModalProps {
   onImageTaken: (imageUri: string) => void;
 }
 
-const ImagePickerModal: React.FC<ImagePickerModalProps> = ({ isVisible, onClose, onImageSelected,onImageTaken }) => {
+const ImagePickerModal: React.FC<ImagePickerModalProps> = ({ isVisible, onClose, onImageSelected, onImageTaken }) => {
 
-  const pickImage = useCallback(async () => {
-
-    // Check and request gallery permission here before launching the image library
-    /* REACTIVATE THE PERMISSIOOOOOOOOOON  */
-   /*  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const pickImage = async () => {
+    // Check PERMISSIOOOOOOOOOON 
+    /*  const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       // Handle the case where permission is not granted
       console.log('Gallery permission not granted');
@@ -38,9 +35,9 @@ const ImagePickerModal: React.FC<ImagePickerModalProps> = ({ isVisible, onClose,
       onImageSelected(result.assets[0].uri);
       onClose(); // Close the modal
     }
-  },[onClose, onImageSelected]);
+  }
 
-  const openCamera = useCallback(async () => {
+  const openCamera = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       console.log('Camera permission not granted');
@@ -57,28 +54,26 @@ const ImagePickerModal: React.FC<ImagePickerModalProps> = ({ isVisible, onClose,
       onImageTaken(result.assets[0].uri);
     }
     onClose();
-  },[onImageTaken, onClose]);
+  }
 
 
   return (
-      <Modal isVisible={isVisible} onBackdropPress={onClose}>
-        <View style={styles.modalContent}>
-            <Text style={styles.modalHeader}>Choose an option</Text>
-            <TouchableOpacity style={styles.modalButton} onPress={pickImage}>
-              <MaterialIcons name="photo-library" size={24} color="black" />
-              <Text style={styles.modalButtonText}>Select from Gallery</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.modalButton} onPress={openCamera}>
-              <MaterialIcons name="photo-camera" size={24} color="black" />
-              <Text style={styles.modalButtonText}>Open Camera</Text>
-            </TouchableOpacity> 
-            
-            <TouchableOpacity style={styles.modalButton} onPress={onClose}>
-              <Text style={styles.modalButtonText}>Close</Text>
-            </TouchableOpacity>
-        </View>     
-      </Modal>
+    <Modal isVisible={isVisible} onBackdropPress={onClose}>
+      <View style={styles.modalContent}>
+          <Text style={styles.modalHeader}>Choose an option</Text>
+          <TouchableOpacity style={styles.modalButton} onPress={pickImage}>
+            <MaterialIcons name="photo-library" size={24} color="black" />
+            <Text style={styles.modalButtonText}>Select from Gallery</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.modalButton} onPress={openCamera}>
+            <MaterialIcons name="photo-camera" size={24} color="black" />
+            <Text style={styles.modalButtonText}>Open Camera</Text>
+          </TouchableOpacity> 
+          <TouchableOpacity style={styles.modalButton} onPress={onClose}>
+            <Text style={styles.modalButtonText}>Close</Text>
+          </TouchableOpacity>
+      </View>     
+    </Modal>
   );
 };
 

@@ -1,5 +1,5 @@
-import React, { useCallback } from 'react';
-import { View, Platform, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { Fragment, useRef, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import Modal from "react-native-modal";
 
 import { useForm, Controller } from 'react-hook-form';
@@ -8,6 +8,7 @@ import {addCommentToTask} from '../../../reduxReducers/projectSlice'
 
 import { useMutation } from '@apollo/client';
 import { ADD_COMMENT_TODO } from '../../../../apollo/mutations/todo/todoMutations'; 
+import { useToast } from '../../../utils/toastContext/ToastContext';
 
 interface AddCommentModalProps {
   isVisible: boolean;
@@ -19,13 +20,18 @@ interface InputTypes {
   commentText: string
 }
 const AddCommentModal: React.FC<AddCommentModalProps> = ({ isVisible, todoId, projectId, onClose }) => {
+  const {success} = useToast()
+  const [addCommentTodo] = useMutation(ADD_COMMENT_TODO);    
+  const inputRef = useRef<any>(null)
+  useEffect(()=>{
+    inputRef.current?.focus()
+  },[isVisible])
 
- const [addCommentTodo] = useMutation(ADD_COMMENT_TODO);    
- const dispatch = useDispatch()
+  const dispatch = useDispatch()
+  
+  const { control, handleSubmit, reset, formState: { errors }, setValue, setError,clearErrors } = useForm<InputTypes>();    
 
- const { control, handleSubmit, reset, formState: { errors }, setValue, setError,clearErrors } = useForm<InputTypes>();    
-
-  const addComment = useCallback(async (formData: InputTypes) => {
+  const addComment = async (formData: InputTypes) => {
     const {commentText} = formData
     if(!commentText.trim()){
       setError("commentText", {
@@ -49,6 +55,7 @@ const AddCommentModal: React.FC<AddCommentModalProps> = ({ isVisible, todoId, pr
       reset()
       clearErrors("commentText")
       onClose()
+      success("Comment added successfully")
     } catch (error) {
       console.log('=========ERROR==========');
       console.error('Error add comment todo:', error);
@@ -58,12 +65,11 @@ const AddCommentModal: React.FC<AddCommentModalProps> = ({ isVisible, todoId, pr
       console.log('completed');
       console.log('====================================');
     }
-  }, [addCommentTodo, dispatch, projectId, todoId, setError, reset, clearErrors, onClose]);
-  
-  const close = useCallback(() => {
+  }
+  const close = () => {
     reset()
     onClose()
-  }, [reset, onClose]);
+  };
 
   return (
       <Modal isVisible={isVisible} onBackdropPress={close}>
@@ -71,23 +77,24 @@ const AddCommentModal: React.FC<AddCommentModalProps> = ({ isVisible, todoId, pr
           <Controller
               control={control}
               render={({ field }) => (
-                <>
-                    <TextInput
-                      placeholder="Comment"
-                      value={field.value}
-                      onChangeText={field.onChange}
-                      style={styles.input}
-                      multiline={true}
-                      numberOfLines={3}
-                    />
-                    {errors.commentText && 
-                      <Text style={{color:'red', marginBottom: 10, marginTop: -10}}>{errors.commentText.message}</Text>
-                    }
-                </>
+                <Fragment>
+                  <TextInput
+                    ref={inputRef}
+                    placeholder="Comment"
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    style={styles.input}
+                    multiline={true}
+                    numberOfLines={3}
+                  />
+                  {errors.commentText && 
+                    <Text style={{color:'red', marginBottom: 10, marginTop: -10}}>{errors.commentText.message}</Text>
+                  }
+                </Fragment>
               )}
               name="commentText"
           />
-          <TouchableOpacity style={{ borderWidth: 0.3, paddingHorizontal: 25, paddingVertical: 10, borderRadius: 20, alignSelf: 'center' }} 
+          <TouchableOpacity style={styles.confirmBtn} 
             onPress={handleSubmit(addComment)}
           >
             <Text>Add Comment</Text>
@@ -121,6 +128,7 @@ const styles = StyleSheet.create({
     width: '100%',
     textAlign: 'center'
   },
+  confirmBtn: { borderWidth: 0.3, paddingHorizontal: 25, paddingVertical: 10, borderRadius: 20, alignSelf: 'center' }
 });
 
 export default AddCommentModal;

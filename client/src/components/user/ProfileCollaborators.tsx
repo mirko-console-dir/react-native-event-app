@@ -1,9 +1,8 @@
-import React, {useCallback, useState} from 'react'
+import React, { useState} from 'react'
 import {
     SafeAreaView,
     View,
     FlatList,
-    Platform
 } from 'react-native';
 
 import { useSelector } from "react-redux";
@@ -21,19 +20,19 @@ import AddCollaboratorModal from '../modals/user/AddCollaboratorModal';
 const ProfileCollaborators = () => {
     // Add Collaborator Modal
     const [isCollaboratorModalVisible, setCollaboratorModalVisible] = useState(false);
-    const toggleCollaboratorModal = useCallback(() => {
+    const toggleCollaboratorModal = () => {
         setCollaboratorModalVisible(prev=>!prev)
-    },[]);
+    }
     // END Add Collaborator Modal
     const user: UserLoggedIn | any = useSelector((state: RootState) => {
       return state.user.user
     });
 
-    const renderCollaborator = useCallback(({item}:{item: Collaborator}) => {
+    const renderCollaborator = ({item}:{item: Collaborator}) => {
         return (
             <CollaboratorDetails collaborator={item}/>
         )
-    },[])
+    }
     return (
         <SafeAreaView style={{flex:1}}>
             <View style={styles.profileCollaboratorsPage}>

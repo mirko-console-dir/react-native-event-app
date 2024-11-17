@@ -67,21 +67,23 @@ const CreateProject = ({today}: StackProps) => {
     }
     Keyboard.dismiss();
   }, [clearErrors, errors.expireDate, setValue]);
+  
   // END Close keybord avoid conflict with data picker onChange and setValue form
   // Ask if want to add collaborator 
   const [collaboratorModal, setCollaboratorModal] = useState(false)
-  const toggleAddCollabModal = useCallback(() =>{
+  const toggleAddCollabModal = () =>{
     setCollaboratorModal(prev=> !prev)
-  },[])
-  const askCollaborator = useCallback(() =>
+  }
+
+  const askCollaborator = () =>
     Alert.alert('Add a Collaborator for the task?', 'Collaborate with other users', [
       {text: 'Maybe Later', onPress: () => {
         navigation.navigate('TodoStack', {screen:'Create Task', params: { projectId: newProjectCreated.projectId, projectTitle: newProjectCreated.projectTitle, projectExpireDate: newProjectCreated.expireDate}})
         }
       },
       {text: 'OK', onPress: () => toggleAddCollabModal()}
-    ]),[navigation, newProjectCreated, toggleAddCollabModal]);
-   // END Ask if want to add collaborator 
+  ])
+  // END Ask if want to add collaborator 
 
   const handleCreateProject = useCallback(async (formData: InputTypes) => {
     const {title, expireDate} = formData
@@ -123,20 +125,21 @@ const CreateProject = ({today}: StackProps) => {
       errorToast('Error creating Event');
     }  
   }, [askCollaborator, createProject, dispatch, errorToast, setError, success]);
-
  
-  const resetValueForm = useCallback(() => {
+  const resetValueForm = () => {
     reset({ title: '', expireDate: '' })
     clearErrors("title") 
     clearErrors("expireDate") 
     setSelectedDate(null)
-  }, [clearErrors, reset]);
+  }
 
-  const SaveButtonProject = useCallback(() => (
-      <SaveButton onPress={handleSubmit(handleCreateProject)}/>
-  ),[handleSubmit,handleCreateProject])
-  useNavigationOptions({headerRight: SaveButtonProject});
+  const handleSave = useCallback(() => {
+    handleSubmit(handleCreateProject)();
+  }, [handleSubmit, handleCreateProject]);
 
+  // Save button
+  useNavigationOptions({headerRight: ()=> <SaveButton onPress={handleSave}/>});
+  // END Save button
 
   if(loading){
     return (
@@ -206,13 +209,11 @@ const CreateProject = ({today}: StackProps) => {
                 </View>
               </View>
               {newProjectCreated.projectId && 
-                <>
-                  <AddCollaboratorsModal 
-                    isVisible={collaboratorModal} 
-                    onClose={()=>{toggleAddCollabModal(),askCollaborator()}} 
-                    projectId={newProjectCreated?.projectId} 
-                  />
-                </>
+                <AddCollaboratorsModal 
+                  isVisible={collaboratorModal} 
+                  onClose={()=>{toggleAddCollabModal(),askCollaborator()}} 
+                  projectId={newProjectCreated?.projectId} 
+                />
               }
             </View>
           </TouchableWithoutFeedback>

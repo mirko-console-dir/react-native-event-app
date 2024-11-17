@@ -99,22 +99,24 @@ const EditProject = ({today}: StackProps) => {
   },[]);
   // END Add Collaborator Modal
 
-  const ProjectEditActions = useCallback(() => {
-    return (
-      <View style={styles.viewProjectPage.header.projectViewActions}>
-          <TouchableOpacity onPress={toggleCollaboratorModal}>
-            <Feather name={'user-plus'} size={25} />
-          </TouchableOpacity>
-          <SaveButton onPress={handleSubmit(handleSubmitEditProject)}/>
-      </View>
-    )
-  },[handleSubmit, handleSubmitEditProject, toggleCollaboratorModal])
+  const handleSave = useCallback(() => {
+    handleSubmit(handleSubmitEditProject)();
+  }, [handleSubmit, handleSubmitEditProject]);
 
-  useNavigationOptions({headerRight: ProjectEditActions});
+  // Save button
+  useNavigationOptions({headerRight: ()=> 
+    <View style={styles.viewProjectPage.header.projectViewActions}>
+      <TouchableOpacity onPress={toggleCollaboratorModal}>
+        <Feather name={'user-plus'} size={25} />
+      </TouchableOpacity>
+      <SaveButton onPress={handleSave}/>
+    </View>
+  });
+  // END Save button
   
   const [deleteCollaboratorProject] = useMutation(DELETE_COLLABORATOR_PROJECT);
 
-  const deleteCollaborator = useCallback(async (collaboratorId: string) => {
+  const deleteCollaborator = async (collaboratorId: string) => {
     try{
       const deletedCollaborator = await deleteCollaboratorProject({
         variables: {
@@ -129,16 +131,15 @@ const EditProject = ({today}: StackProps) => {
     }catch(err){
       error('Something Wrong')
     }
-  }, [deleteCollaboratorProject, dispatch, projectId, success, error]);
+  }
 
-  const askConfirmDelete = useCallback((collaboratorId: string, nameCollaborator: string) =>
+  const askConfirmDelete = (collaboratorId: string, nameCollaborator: string) =>
     Alert.alert('Delete Collaborator?', `${nameCollaborator} will not be able to see the project and relative tasks`, [
       {text: 'Cancel', onPress: () => {}},
       {text: 'OK', onPress: () => deleteCollaborator(collaboratorId)}
-    ]),[deleteCollaborator]);
+  ])
 
-
-  const renderCollaborator = useCallback(({item}: any) => {
+  const renderCollaborator = ({item}: any) => {
     return (
       <View style={{paddingVertical: 5,flexDirection:'row', justifyContent: 'space-between', alignItems: 'center'}}>
             <CollaboratorAvatar 
@@ -154,7 +155,7 @@ const EditProject = ({today}: StackProps) => {
           </TouchableOpacity>
       </View>
     )
-  },[askConfirmDelete])
+  }
 
   return (
       <SafeAreaView style={{flex:1}}>

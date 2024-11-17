@@ -57,11 +57,11 @@ const EditProfile = () => {
     const [selectedImage, setSelectedImage] = useState('');
     const [isModalVisible, setModalVisible] = useState(false);
 
-    const toggleModal = useCallback(() => {
+    const toggleModal = () => {
         setModalVisible(prev=>!prev);
-    },[]);
+    }
 
-    const fetchImageData = useCallback(async (imageUri: any) => {
+    const fetchImageData = async (imageUri: any) => {
         const response = await fetch(imageUri);
         const arrayBuffer = await response.arrayBuffer();
         return {
@@ -70,11 +70,11 @@ const EditProfile = () => {
             originalFileName: 'avatar-user',
             caption: 'Image Caption',
         };
-    },[]);
+    }
 
-    const handleImageSelected = useCallback(async (imageUri: any) => {
+    const handleImageSelected = async (imageUri: any) => {
         setSelectedImage(imageUri);
-    },[]);
+    }
     // End avatar 
     const [editUser, { error, loading, data }] = useMutation(EDIT_USER)
     const handleEditUser = useCallback(async (formData: InputTypes) => {
@@ -104,14 +104,15 @@ const EditProfile = () => {
         }catch(err){
             errorToast('Something wrong')
         }
-    },[fetchImageData, reset, navigation, editUser, dispatch, updateUser, success, error])
+    },[editUser])
 
+    const handleSave = useCallback(() => {
+        handleSubmit(handleEditUser)();
+    }, [handleSubmit, handleEditUser]);
+    
     // Save button
-    const SaveButtonUser = useCallback(() => (
-        <SaveButton onPress={handleSubmit(handleEditUser)}/>
-    ),[handleSubmit,handleEditUser])
-    useNavigationOptions({headerRight: SaveButtonUser});
-    // END Save button
+    useNavigationOptions({headerRight: ()=> <SaveButton onPress={handleSave}/>});
+
     if(loading){
         return (
             <View style={{flex:1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>

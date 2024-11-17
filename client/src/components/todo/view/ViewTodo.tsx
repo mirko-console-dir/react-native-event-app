@@ -1,4 +1,4 @@
-import React, {useEffect,useMemo, useState, useLayoutEffect,useRef, useCallback} from 'react';
+import React, {useEffect,useMemo, useState,useRef} from 'react';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { SafeAreaView, View, Text, FlatList, Dimensions, Image, TouchableOpacity, Platform} from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
@@ -80,58 +80,57 @@ const ViewTodo = ({today}: StackProps) => {
     
     // MoreIcon Modal Todo
     const [todoModalVisibility, setTodoModalVisibility] = useState(false);
-    const toggleActionsModal = useCallback(() => {
+    const toggleActionsModal = () => {
       setTodoModalVisibility((prev) => !prev);
-    }, []);
+    }
 
-    const TodoMoreIcon = useCallback(() => {
-      return (
-        <TouchableOpacity style={styles.viewTaskPage.header.actions.areaAction} onPress={() => toggleActionsModal()} >
+    useNavigationOptions({headerRight: ()=>
+      <TouchableOpacity 
+        style={styles.viewTaskPage.header.actions.areaAction} 
+        onPress={() => toggleActionsModal()} 
+      >
           <Feather name={'more-horizontal'} size={25} />
-        </TouchableOpacity>
-      )
-    },[toggleActionsModal])
-    useNavigationOptions({headerRight: TodoMoreIcon});
+      </TouchableOpacity>
+    });
     // END MoreIcon Modal Todo
 
     // Navigate to Edit Task
-    const navigateEditTodo = useCallback((todo: Todo) => {
+    const navigateEditTodo = (todo: Todo) => {
       navigation.navigate('TodoStack', {
         screen: 'Edit Task',
         params: { todoId: todo.id, projectInfo: projectInfo},
       });
-    }, [navigation, projectInfo]);
+    }
     // End Navigate to Edit Task
 
     // Comment List 
       // Add Comment Modal
       const [isAddCommentModalVisible, setAddCommentModalVisible] = useState(false);
-      const toggleCommentModal = useCallback(() => {
+      const toggleCommentModal = () => {
         setAddCommentModalVisible((prev) => !prev);
-      }, []);
+      }
       // END Add Comment Modal
     // End Comment List 
 
-    const keyExtractorComment = useCallback((item: Comment) => item.id, []);
-    const renderItemComment = useCallback(({ item, index, totalItems }: { item: Comment, index: number, totalItems: number }) => (
+    const renderItemComment = ({ item, index, totalItems }: { item: Comment, index: number, totalItems: number }) => (
       <React.Fragment>
         <CommentItem item={item} todoId={todoId} projectId={projectInfo.projectId} />
         {index === totalItems - 1 && <View style={styles.extraSpaceForListItem} />}
       </React.Fragment>
-    ), [todoId, projectInfo.projectId]);
+    )
 
      // Carousel Modal for attached images
      const [carouselModalVisible, setCarouselModalVisible] = useState(false);
      const [carouselIndex, setCarouselIndex] = useState(0);
    
-     const openCarouselModal = useCallback((index: number) => {
+     const openCarouselModal = (index: number) => {
       setCarouselIndex(index);
       setCarouselModalVisible(true);
-    }, []);
-  
-    const closeCarouselModal = useCallback(() => {
+    }
+
+    const closeCarouselModal = () => {
       setCarouselModalVisible(false);
-    }, []);
+    }
      // END Carousel Modal for attached images
 
   
@@ -204,7 +203,7 @@ const ViewTodo = ({today}: StackProps) => {
                           <React.Fragment>
                             <FlatList
                               data={todo?.comments.slice().reverse()} //Create a copy with slice() and then reverse it, for TypeError: Cannot assign to read-only property
-                              keyExtractor={keyExtractorComment}
+                              keyExtractor={(item: Comment) => item.id}
                               renderItem={({ item, index }) => renderItemComment({ item, index, totalItems: todo.comments.length })}
                               removeClippedSubviews={false}
                               initialNumToRender={3}

@@ -25,9 +25,9 @@ const StatsProjects = ({today}: StackProps) => {
   const [projectsUpComingRange, setProjectsUpComingRange] = useState<Array<Project>>([]);
   const [projectsCompletedRange, setProjectsCompletedRange] = useState<Array<Project>>([]);
 
-  const renderProjectItem =  useCallback(({item}: {item: Project}) => { 
+  const renderProjectItem = ({item}: {item: Project}) => { 
     return <ProjectItemBox project={item} />;
-  }, [])
+  }
 
   // Status Graph
   const heightInProgress = useRef(new Animated.Value(0)).current;
@@ -55,16 +55,16 @@ const StatsProjects = ({today}: StackProps) => {
       duration: 900, 
       useNativeDriver: false,
     }).start();
-  }, [filterType, projectsInProgress.length, projectsInProgressRange.length, projectsUpComing.length, projectsUpComingRange.length, projectsCompleted.length, projectsCompletedRange.length]);
+  }, [filterType]);
 
 
   // range selection
 
   const [isModalRangeVisible, setModalRangeVisible] = useState(false);
 
-  const toggleModal = useCallback(() => {
+  const toggleModal = () => {
         setModalRangeVisible(prev=>!prev);
-  },[]);
+  }
 
   const handleConfirmRange = useCallback((dateStart: string, dateEnd: string) => {
      // Filter projects that are in progress/pending

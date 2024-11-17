@@ -6,7 +6,7 @@ interface SaveButtonProps {
 }
 
 const SaveButton : React.FC<SaveButtonProps>  = ({onPress}) => {
-
+  console.log('SaveButton rendered')
   return (
     <TouchableOpacity style={{paddingHorizontal: 15, paddingVertical: 10}} onPress={onPress}>
         <Text>Save</Text>
@@ -14,4 +14,4 @@ const SaveButton : React.FC<SaveButtonProps>  = ({onPress}) => {
   )
 }
 
-export default SaveButton
+export default React.memo(SaveButton)

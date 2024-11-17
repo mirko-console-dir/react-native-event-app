@@ -1,7 +1,7 @@
 import { SafeAreaView, View, Text, FlatList,TouchableOpacity } from "react-native";
 import styles from '../../styles'
 import { useLanguageContext } from "../../utils/languages/LanguageProvider";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import CountryFlag from "react-native-country-flag-icon";
 
 const LanguageSelection = () => {
@@ -11,12 +11,12 @@ const LanguageSelection = () => {
         {code:'it',flag:'it', name: 'Italiano'},
         {code:'jp',flag:'jp', name: '日本語'}
     ])
-    const handleLanguageChange = useCallback((newLanguage: string) => {
+    const handleLanguageChange = (newLanguage: string) => {
         if (newLanguage !== language) {
           setLanguage(newLanguage);
         }
-    },[language]);
-    const renderLanguages = useCallback(({item}: any) => {
+    }
+    const renderLanguages = ({item}: any) => {
         return (
             <TouchableOpacity 
                 style={{flexDirection: 'row', alignItems: 'center',gap: 20, paddingVertical: 10,marginVertical: 10}}
@@ -26,7 +26,7 @@ const LanguageSelection = () => {
                 <Text style={styles.h3}>{item.name}</Text>
             </TouchableOpacity>
         )
-    },[handleLanguageChange])
+    }
     
     return (
         <SafeAreaView style={{flex:1}}>

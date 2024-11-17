@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet,LayoutAnimation,Alert } from 'react-native';
 import Modal from "react-native-modal";
 import { useDispatch } from 'react-redux';
@@ -16,16 +16,17 @@ interface InputTypes {
   collaboratorEmail: string;
 }
 const AddCollaboratorModal: React.FC<AddCollaboratorModalProps> = ({ isVisible, onClose }) => {
-  const { success, error, warning } = useToast();
-
+  const { success, error } = useToast();
+  const inputRef = useRef<TextInput>(null)
   LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
   
   const [addCollaboratorToUser] = useMutation(ADD_COLLABORATOR_USER);
+  
   const dispatch = useDispatch()
   const { control, handleSubmit, reset, formState: { errors }, setValue, setError,clearErrors } = useForm<InputTypes>();  
 
   /* Add collaborator manually */
-  const handleAddCollaborator = useCallback(async (formData: InputTypes) => {
+  const handleAddCollaborator = async (formData: InputTypes) => {
     const {collaboratorEmail} = formData
 
     try {
@@ -46,12 +47,16 @@ const AddCollaboratorModal: React.FC<AddCollaboratorModalProps> = ({ isVisible, 
     } catch (err) {
       error('Something wrong');
     }
-  }, [dispatch, reset, onClose, addCollaboratorToUser, addCollaboratorUser, error, success]);
+  }
   /* END Add collaborator manually */
-  const close = useCallback(() => {
+  const close = () => {
     reset()
     onClose()
-  },[reset, onClose])
+  }
+
+  useEffect(()=>{
+    inputRef.current?.focus()
+  },[isVisible])
 
   return (
       <Modal isVisible={isVisible} onBackdropPress={close}>
@@ -62,6 +67,7 @@ const AddCollaboratorModal: React.FC<AddCollaboratorModalProps> = ({ isVisible, 
             render={({ field }) => (
               <>
                 <TextInput
+                  ref={inputRef}
                   placeholder="Email Collaborator"
                   value={field.value}
                   onChangeText={field.onChange}
@@ -127,5 +133,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddCollaboratorModal;
+export default React.memo(AddCollaboratorModal);
 

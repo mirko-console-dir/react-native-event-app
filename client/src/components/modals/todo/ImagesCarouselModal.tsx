@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, Text, Image, Dimensions, SafeAreaView, TouchableOpacity, StyleSheet } from 'react-native';
 import Modal from 'react-native-modal';
 import Carousel from 'react-native-reanimated-carousel';
@@ -10,28 +10,28 @@ type ImagesCarouselModalProps = {
   selectedIndex: number;
   onClose: () => void;
 }
+const {width, height} = Dimensions.get('screen');
 
 const ImagesCarouselModal: React.FC<ImagesCarouselModalProps> = ({ isVisible, images, selectedIndex, onClose }) => {
-  const width = Dimensions.get('window').width;
-  const height = Dimensions.get('window').height; 
+
   // Manipulate index to render correct order 
   const adjustedImages = useMemo(() => [
     ...images.slice(selectedIndex),
     ...images.slice(0, selectedIndex)
   ], [images, selectedIndex]);
-  
-  const renderCarouselItem = useCallback(({ item }: { item: any }) => (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Image source={{ uri: item.url ? item.url : item.uri }} style={{ width: '100%', height: '100%', resizeMode: 'contain' }} />
+
+  const renderCarouselItem = ({ item }: { item: any }) => (
+    <View style={styles.itemContainer}>
+      <Image source={{ uri: item.url ? item.url : item.uri }} style={styles.imgStyle} />
     </View>
-  ), []);
+  )
 
   const [currentImageFeedback, setCurrentImageFeedback] = useState(selectedIndex + 1);
 
   return (
-    <Modal isVisible={isVisible} onBackdropPress={onClose} style={{ justifyContent: 'center', alignItems: 'center' }}>
-      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width }}>
-        <View style={{ width, height: height / 2, justifyContent: 'center', alignItems: 'center' }}>
+    <Modal isVisible={isVisible} onBackdropPress={onClose} style={styles.modal}>
+      <SafeAreaView style={styles.modalSafeArea}>
+        <View style={styles.container}>
           <Carousel
             loop
             width={width}
@@ -42,8 +42,8 @@ const ImagesCarouselModal: React.FC<ImagesCarouselModalProps> = ({ isVisible, im
             onSnapToItem={(index) => setCurrentImageFeedback(index + 1)}
             renderItem={({ index }) => renderCarouselItem({ item: adjustedImages[index] })}
           />
-          <View style={{ alignItems: 'center', marginTop: 10 }}>
-            <Text style={{ fontSize: 18, color: 'white' }}>{`Image ${currentImageFeedback} of ${images.length}`}</Text>
+          <View style={styles.subtitleContainer}>
+            <Text style={styles.textSubtitle}>{`Image ${currentImageFeedback} of ${images.length}`}</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Feather name={'x-circle'} size={45} color={'white'}/>
@@ -55,11 +55,28 @@ const ImagesCarouselModal: React.FC<ImagesCarouselModalProps> = ({ isVisible, im
 };
 
 const styles = StyleSheet.create({
+  modal: { justifyContent: 'center', alignItems: 'center' },
+  modalSafeArea: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    width: width 
+  },
+  container: { 
+    width: width, 
+    height: height / 2, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  subtitleContainer: { alignItems: 'center', marginTop: 10 },
+  textSubtitle: { fontSize: 18, color: 'white' },
   closeButton: {
     marginTop: 10,
     position: 'absolute',
     top: 0,
     right: 10,
-  }
+  },
+  itemContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  imgStyle: { width: '100%', height: '100%', resizeMode: 'contain' }
 });
 export default ImagesCarouselModal;

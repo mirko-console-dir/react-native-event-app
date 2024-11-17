@@ -1,8 +1,7 @@
-import React, { useState, useMemo, useCallback}from 'react';
+import React, { useState, useEffect}from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Modal from "react-native-modal";
 import DatePicker from 'react-native-modern-datepicker';
-import { useToast } from '../../utils/toastContext/ToastContext';
 
 interface RangeDateSelectionModalProps {
   isVisible: boolean;
@@ -14,74 +13,68 @@ interface RangeDateSelectionModalProps {
 }
 
 const RangeDateSelectionModal: React.FC<RangeDateSelectionModalProps> = ({ isVisible, onClose, today, projectsDate, onConfirm, currentFilterType }) => {
-  const { success, error, warning } = useToast();
+  
+  const [minSelected, setMinSelected] = useState('');
+  const [maxSelected, setMaxSelected] = useState('');
+  const [selectionNumber, setSelectionNumber] = useState(0);
 
-    const [minSelected, setMinSelected] = useState('');
-    const [maxSelected, setMaxSelected] = useState('');
-    const [selectionNumber, setSelectionNumber] = useState(0);
+  const handleRange = (date:any)=>{
+    if(!selectionNumber){
+      setMinSelected(date)
+      setSelectionNumber(1)
+    } else {
+      setMaxSelected(date)
+      setSelectionNumber(0)
+    }
+  }
 
-    const handleRange = useCallback((date:any)=>{
-      if(!selectionNumber){
-        setMinSelected(date)
-        setSelectionNumber(1)
-      } else {
-        setMaxSelected(date)
-        setSelectionNumber(0)
-      }
-    },[selectionNumber])
+  const handleConfirm = () => {
+    onConfirm(minSelected,maxSelected)
+    onClose()
+  }
 
-    const handleConfirm = useCallback(() => {
-      if(minSelected == '' || maxSelected == ''){
-        warning('Please select Start and End date')
-        return
-      }
-      onConfirm(minSelected,maxSelected)
-      onClose()
-    },[minSelected,maxSelected,onConfirm,onClose,warning])
-
-    const handleCancel = useCallback(() => {
-      setMinSelected('')
-      setMaxSelected('')
-    },[])
-
-    useMemo(()=>currentFilterType == 'ALL' ? handleCancel() : null, [currentFilterType])
+  const handleCancel = () => {
+    setMinSelected('')
+    setMaxSelected('')
+  }
+  useEffect(()=>{
+    currentFilterType == 'ALL' ? handleCancel() : null
+  },[currentFilterType])
 
   return (
       <Modal isVisible={isVisible} onBackdropPress={onClose}>
         <View style={modalStyles.modalContent}>
-        <DatePicker
-                options={{
-                  backgroundColor: 'rgba(58, 82, 63, 0.32)',
-                  textHeaderColor: '#324A2A',
-                  textDefaultColor: '#3A612D',
-                  selectedTextColor: '#fff',
-                  mainColor: '#F4722B',
-                  textSecondaryColor: '#324A2A',
-                  borderColor: 'none',
-                  textFontSize: 15,
-                  textHeaderFontSize: 15
-                }}
-                mode="calendar"
-                style={{ borderRadius: 10, backgroundColor: 'transparent', borderWidth: 0.2}}
-                current={today}
-                projectsDate={projectsDate}
-                todosDate={[]}
-                onDateChange={handleRange}
-                minimumDate={minSelected}
-                maximumDate={maxSelected}
-              />
-              {minSelected && maxSelected && 
-                <>
-                 <View style={modalStyles.actions}>
-                <TouchableOpacity onPress={handleCancel} style={[modalStyles.btn,modalStyles.resetButton]}>
-                  <Text style={modalStyles.resetBtnText}>Reset</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleConfirm} style={[modalStyles.btn,modalStyles.confirmButton ]}>
-                  <Text style={modalStyles.confirmBtnText} >Confirm</Text>
-                </TouchableOpacity>
-              </View>
-                </>
-              }
+          <DatePicker
+            options={{
+              backgroundColor: 'rgba(58, 82, 63, 0.32)',
+              textHeaderColor: '#324A2A',
+              textDefaultColor: '#3A612D',
+              selectedTextColor: '#fff',
+              mainColor: '#F4722B',
+              textSecondaryColor: '#324A2A',
+              borderColor: 'none',
+              textFontSize: 15,
+              textHeaderFontSize: 15
+            }}
+            mode="calendar"
+            style={{ borderRadius: 10, backgroundColor: 'transparent', borderWidth: 0.2}}
+            current={today}
+            projectsDate={projectsDate}
+            todosDate={[]}
+            onDateChange={handleRange}
+            minimumDate={minSelected}
+            maximumDate={maxSelected}
+          />
+          {minSelected && maxSelected && 
+            <View style={modalStyles.actions}>
+              <TouchableOpacity onPress={handleCancel} style={[modalStyles.btn,modalStyles.resetButton]}>
+                <Text style={modalStyles.resetBtnText}>Reset</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleConfirm} style={[modalStyles.btn,modalStyles.confirmButton ]}>
+                <Text style={modalStyles.confirmBtnText} >Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          }
         </View>
       </Modal>
   );

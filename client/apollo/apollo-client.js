@@ -21,7 +21,6 @@ const authLink = setContext(async (_, { headers }) => {
       }
   }
 });
-
 // HTTP connection to the API
 const httpLink = createHttpLink({
   uri: `${ENV_BASE_URL}:4000/graphql`,
@@ -84,12 +83,13 @@ const errorLink = onError(({ graphQLErrors,networkError, operation, forward }) =
                 }));
   
                 // Retry the original operation with the new token
-                const subscriber = forward(operation).subscribe(observer);
                 console.log('operation forward')
+                console.log('operation ', operation)
+                const subscriber = forward(operation).subscribe(observer);
                 // reactivate web socket 
                 wsLink = createWsLink();
                 // Cleanup subscriptions
-                return () => subscriber.unsubscribe();
+                return subscriber.unsubscribe();
               } catch (refreshError) {
                 console.error('Token Refresh - Failed:', refreshError);
                 observer.error(refreshError);
