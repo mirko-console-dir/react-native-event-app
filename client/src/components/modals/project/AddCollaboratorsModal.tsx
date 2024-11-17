@@ -1,7 +1,6 @@
-import React, {useCallback, useEffect, useState}from 'react';
-import { TouchableWithoutFeedback,View, Text, TextInput, TouchableOpacity, StyleSheet,LayoutAnimation,FlatList, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState}from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet,LayoutAnimation,FlatList, ActivityIndicator } from 'react-native';
 import Modal from "react-native-modal";
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { RootState } from '../../../../app/store';
 import { useSelector, useDispatch } from 'react-redux';
@@ -57,31 +56,31 @@ const AddCollaboratorsModal: React.FC<AddCollaboratorsModalProps> = ({ isVisible
   /* Add collaborators from list */
   const [collaboratorsEmailSelected, setCollaboratorsEmailSelected] = useState<string[]>([]);
 
-  const toggleHistoryCollaborators = useCallback(() => {
+  const toggleHistoryCollaborators = () => {
     if (historyCollaborators) {
       setCollaboratorsEmailSelected([]);
     }
     setHistoryCollaborators(prev => !prev);
-  }, [historyCollaborators]);
+  }
 
-  const handleAddSelectedCollaborator = useCallback((email: string) => {
+  const handleAddSelectedCollaborator = (email: string) => {
     setCollaboratorsEmailSelected(prevSelected => {
       const updatedList = [...prevSelected, email];
       setErrorCollaboratorList(false);
       return updatedList;
     });
-  }, []);
+  }
 
-  const handleRemoveSelectedCollaborator = useCallback((email: string) => {
+  const handleRemoveSelectedCollaborator = (email: string) => {
     setCollaboratorsEmailSelected(prevSelected => {
       const updatedList = prevSelected.filter(selectedEmail => selectedEmail !== email);
       setErrorCollaboratorList(false);
       return updatedList;
     });
-  }, []);
+  }
   const [loading, setLoading] = useState(false)
   /* Add collaborator manually */
-  const handleAddCollaborator = useCallback(async (formData: InputTypes) => {
+  const handleAddCollaborator = async (formData: InputTypes) => {
     const {collaboratorEmail} = formData
     try {
       setLoading(prev=>!prev)
@@ -114,10 +113,10 @@ const AddCollaboratorsModal: React.FC<AddCollaboratorsModalProps> = ({ isVisible
       setLoading(prev=>!prev)
     }
 
-  }, [historyCollaborators, collaboratorsEmailSelected, addCollaboratorToProject, projectId, dispatch, reset, success, error, onClose]);
+  }
   /* END Add collaborator manually */
 
-  const renderPrevCollaborator = useCallback(({ item }:any) => {
+  const renderPrevCollaborator = ({ item }:any) => {
     return (
       <CollaboratorSelect 
         collaborator={item}
@@ -126,15 +125,15 @@ const AddCollaboratorsModal: React.FC<AddCollaboratorsModalProps> = ({ isVisible
         onDeselect={(email: string) => handleRemoveSelectedCollaborator(email)}
       />
     );
-  }, [currentProjectCollaboratorsEmail, handleAddSelectedCollaborator, handleRemoveSelectedCollaborator]);
+  }
   /* END Add collaborators from list */
 
-  const close = useCallback(() => {
+  const close = () => {
     reset();
     setCollaboratorsEmailSelected([]);
     setHistoryCollaborators(false);
     onClose();
-  }, [reset, onClose]);
+  }
   
   if(loading){
     return (

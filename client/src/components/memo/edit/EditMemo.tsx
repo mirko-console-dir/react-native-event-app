@@ -81,12 +81,15 @@ const EditMemo = () => {
     } finally{
       //reset()
     }
-  }, [memo, memoId, editMemo, dispatch, success, warning, error, reset]);
+  }, [editMemo]);
 
-  const SaveButtonMemo = useCallback(() => (
-      <SaveButton onPress={handleSubmit(handleEditMemo)}/>
-  ),[handleSubmit,handleEditMemo])
-  useNavigationOptions({headerRight: SaveButtonMemo});
+  const handleSave = useCallback(() => {
+    handleSubmit(handleEditMemo)();
+  }, [handleSubmit, handleEditMemo]);
+
+  // Save button
+  useNavigationOptions({headerRight: ()=> <SaveButton onPress={handleSave}/>});
+  // End button
 
 
   if(loading){

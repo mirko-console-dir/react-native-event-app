@@ -1,5 +1,5 @@
-import React, {useCallback, useState} from 'react';
-import { SafeAreaView, View, Text, FlatList, ImageBackground, Platform, TouchableOpacity, ScrollView } from 'react-native';
+import React, {useState} from 'react';
+import { SafeAreaView, View, Text, FlatList, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import DatePicker from 'react-native-modern-datepicker';
 
@@ -39,46 +39,42 @@ const ViewProject = ({today}: StackProps) => {
 
     // MoreIcon Modal Project
     const [modalProjectVisibility, setProjectModalVisibility] = useState<{ [key: string]: boolean }>({});
-    const openProjectModal = useCallback((projectId: string) => {
+    const openProjectModal = (projectId: string) => {
       setProjectModalVisibility((prev) => ({ ...prev, [projectId]: true }));
-    },[]);
+    }
 
-    const closeProjectModal = useCallback((projectId: string) => {
+    const closeProjectModal = (projectId: string) => {
       setProjectModalVisibility((prev) => ({ ...prev, [projectId]: false }));
-    },[]);
+    }
     // END MoreIcon Modal Project
 
-    const renderTaskItem = useCallback(({item, index, totalItems}: {item: Todo, index: number, totalItems: number}) => { 
+    const renderTaskItem = ({item, index, totalItems}: {item: Todo, index: number, totalItems: number}) => { 
       return (
         <React.Fragment>
           <TaskItem projectId={item.project} todoId={item.id} calendarView={false} todayTaskCalendarView={false}/>
           {index === totalItems - 1 && <View style={styles.extraSpaceForListItem} />}
         </React.Fragment>
         )
-    },[])
+    }
 
-    const handleCreateTask = useCallback(() => {
+    const handleCreateTask = () => {
       navigation.navigate('TodoStack', {screen:'Create Task', params: { projectId: project.id, projectTitle: project.title, projectExpireDate: project.expireDate}})
-    }, [navigation, project?.id, project?.title, project?.expireDate]);
-
-    const ProjectViewActions = useCallback(() => {
-      return (
-              <View style={styles.viewProjectPage.header.projectViewActions}>
-                  <TouchableOpacity onPress={toggleCollaboratorModal} 
-                    style={styles.viewProjectPage.header.projectViewActions.areaAction}
-                    >
-                    <Feather name={'user-plus'} size={25} />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => openProjectModal(project.id)}
-                    style={styles.viewProjectPage.header.projectViewActions.areaAction}
-                  >
-                    <Feather name={'more-horizontal'} size={25} />
-                  </TouchableOpacity>
-              </View>
-      )
-    }, [toggleCollaboratorModal, openProjectModal, project?.id]);
+    }
     
-    useNavigationOptions({headerRight: ProjectViewActions});
+    useNavigationOptions({headerRight: ()=>
+      <View style={styles.viewProjectPage.header.projectViewActions}>
+        <TouchableOpacity onPress={toggleCollaboratorModal} 
+          style={styles.viewProjectPage.header.projectViewActions.areaAction}
+        >
+          <Feather name={'user-plus'} size={25} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => openProjectModal(project.id)}
+          style={styles.viewProjectPage.header.projectViewActions.areaAction}
+        >
+          <Feather name={'more-horizontal'} size={25} />
+        </TouchableOpacity>
+      </View>
+    });
 
     return (
         <SafeAreaView style={{flex:1}}>

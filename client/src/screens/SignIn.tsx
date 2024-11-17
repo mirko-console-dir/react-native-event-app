@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -27,14 +27,15 @@ const SignIn = () => {
 
   const { control, handleSubmit, reset, formState: { errors }, setValue, setError,clearErrors } = useForm<InputTypes>();  
   const [showPassword, setShowPassword] = useState(false);
-  const togglePasswordVisibility = useCallback(() => {
-    setShowPassword(prev => !prev);
-  }, []);
 
-  const onSubmit = useCallback((formData: InputTypes) => {
+  const togglePasswordVisibility = () => {
+    setShowPassword(prev => !prev);
+  }
+
+  const onSubmit = (formData: InputTypes) => {
     const {email, password} = formData
     loginUser(email, password);
-  },[loginUser]);
+  };
 
   if(loading){
     return (

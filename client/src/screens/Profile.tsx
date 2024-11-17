@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView, View, Text, TouchableOpacity,Dimensions, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -30,13 +30,13 @@ const Profile = () => {
   });
 
  
-  const askConfirmSignOut = useCallback(() =>
+  const askConfirmSignOut = () =>
     Alert.alert('Log Out?', '', [
       {text: 'Cancel', onPress: () => {}},
       {text: 'OK', onPress: () => handleSignOut()}
-    ]), []);
+    ])
 
-  const handleSignOut = useCallback(async() => {
+  const handleSignOut = async() => {
     try {
       // Remove userAccessToken from SecureStore
       await AsyncStorage.removeItem('user')
@@ -48,7 +48,7 @@ const Profile = () => {
     } catch (err) {
       error('Error while signing out');
     }
-  }, [AsyncStorage, client,success, error]);
+  }
  
   return (
     <SafeAreaView style={{flex:1}}>     

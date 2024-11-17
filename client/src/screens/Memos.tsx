@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React, { useRef, useState} from 'react';
 import { SafeAreaView, View, Text, TouchableOpacity, ScrollView, Button } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import styles from '../styles';
@@ -15,30 +15,31 @@ const Memos = () => {
   const navigation = useNavigation<any>();
 
   const memos : any = useSelector((state: RootState) => state.memos.memos);
-
   // to open the relative memo modal 
-  const [modalVisibility, setModalVisibility] = useState<{ [key: string]: boolean }>({});
-  const openModal = useCallback((memoId: string) => {
-    setModalVisibility((prev) => ({ ...prev, [memoId]: true }));
-  }, []);
+  const memoRef = useRef('')
+  const [modalVisibility, setModalVisibility] = useState(false);
+  const openModal = (itemId: string) => {
+    memoRef.current = itemId;
+    setModalVisibility(true);
+  };
 
-  const closeModal = useCallback((memoId: string) => {
-    setModalVisibility((prev) => ({ ...prev, [memoId]: false }));
-  }, []);
+  const closeModal = () => {
+    memoRef.current = ''
+    setModalVisibility(false);
+  };
   // END to open the relative memo modal 
 
-  const renderItem = useCallback(({item}: {item: Memo}) => (
+  const actions = {
+    openModal: openModal
+  };
+
+  const renderItem = ({item, actions}: {item: Memo, actions: any}) => (
       <View style={styles.viewMemosPage.main.memosList.memoItem} key={item.id}>
-        <MemoMoreIconModal
-          isVisible={modalVisibility[item.id] || false}
-          onClose={() => closeModal(item.id)}
-          memoId={item.id}
-        />
         <TouchableOpacity onPress={() => navigation.navigate('Memo', { memoId : item.id })}>
           <View style={styles.viewMemosPage.main.memosList.memoItem.content.header}>
-            <Text numberOfLines={2}>{item.title.length > 15 ? `${item.title.substring(0, 12)}...` : item.title}</Text>
+            <Text numberOfLines={2}>{item.title}</Text>
             <TouchableOpacity style={styles.viewMemosPage.main.memosList.memoItem.content.header.moreIcon} 
-              onPress={() => openModal(item.id)}
+              onPress={() => actions.openModal(item.id)}
             >
               <Feather name={'more-horizontal'} size={25} />
             </TouchableOpacity>
@@ -48,7 +49,7 @@ const Memos = () => {
           </View>
         </TouchableOpacity>
       </View>
-  ),[closeModal, openModal, navigation]);
+  );
 
   return (
     <SafeAreaView style={{flex:1}}>
@@ -58,7 +59,7 @@ const Memos = () => {
                   <View style={styles.viewMemosPage.main.memosList}>
                     {memos.map((item: Memo) => {
                       return (
-                        renderItem({item})
+                        renderItem({item, actions})
                       );
                     })}
                   </View>
@@ -66,6 +67,11 @@ const Memos = () => {
             </View>
             <PlusButton onPress={()=>navigation.navigate('Create Memo')}/>
         </View>
+        <MemoMoreIconModal
+          isVisible={modalVisibility}
+          onClose={closeModal}
+          memoId={memoRef.current}
+        />
     </SafeAreaView>
   );
 };

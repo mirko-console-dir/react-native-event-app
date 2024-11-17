@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -11,7 +11,7 @@ import {
   Image,
   ActivityIndicator
 } from 'react-native';
-import {  useNavigation } from '@react-navigation/native';
+import {  useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useForm, Controller } from 'react-hook-form';
@@ -26,7 +26,7 @@ interface InputTypes {
 
 const SignUp = () => {
   const navigation = useNavigation<any>();
-
+  const inputRef = useRef<TextInput>(null)
   const { control, handleSubmit, reset, formState: { errors }, setValue, setError,clearErrors } = useForm<InputTypes>();  
   const [showPassword, setShowPassword] = useState(false);
 
@@ -34,11 +34,11 @@ const SignUp = () => {
   const [selectedImage, setSelectedImage] = useState('');
   const [isModalVisible, setModalVisible] = useState(false);
 
-  const toggleModal = useCallback(() => {
+  const toggleModal = () => {
     setModalVisible(prev=>!prev);
-  }, [setModalVisible]);
+  }
 
-  const fetchImageData = useCallback(async (imageUri: any) => {
+  const fetchImageData = async (imageUri: any) => {
     const response = await fetch(imageUri);
     const arrayBuffer = await response.arrayBuffer();
     return {
@@ -47,15 +47,15 @@ const SignUp = () => {
       originalFileName: 'avatar-user',
       caption: 'Image Caption',
     };
-  }, []);
+  }
 
-  const handleImageSelected = useCallback(async (imageUri: any) => {
+  const handleImageSelected = async (imageUri: any) => {
     setSelectedImage(imageUri);
-  }, []);
+  }
   // End avatar 
   const [createUser, {error, loading}] = useSignUpUser();
 
-  const onSubmit = useCallback(async (formData: InputTypes) => {
+  const onSubmit = async (formData: InputTypes) => {
     const {fullname, email, password} = formData;
     try {
       let avatarData = null;
@@ -68,11 +68,14 @@ const SignUp = () => {
     } catch (error) {
       console.error('Error create user image data:', error);
     }
-  }, [selectedImage, fetchImageData, createUser, loading]);
+  }
+  useFocusEffect(()=>{
+    inputRef.current?.focus()
+  })
 
   if(loading){
     return (
-        <View style={{flex:1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
+        <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" style={{ transform: [{ scaleX: 1.5 }, { scaleY: 1.5 }] }} /> 
         </View>
     )
@@ -87,6 +90,7 @@ const SignUp = () => {
             render={({ field }) => (
               <>
                 <TextInput
+                  ref={inputRef}
                   placeholder="User Name"
                   value={field.value}
                   onChangeText={field.onChange}
@@ -181,13 +185,13 @@ const SignUp = () => {
                 },
             }}
           />
-          <View style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10}}>
+          <View style={styles.avatarContainer}>
               {/* Display the selected image */}
             {selectedImage && 
-              <Image source={{ uri: selectedImage }} style={{width: 50, height: 50, borderRadius: 50 }} />
+              <Image source={{ uri: selectedImage }} style={styles.avatarImage} />
             }
             <TouchableOpacity onPress={toggleModal}>
-              <Text style={{ fontSize: 20,color: 'blue' }}>{selectedImage ? 'Change Avatar': 'Add avatar'}</Text>
+              <Text style={styles.avatarTextBtn}>{selectedImage ? 'Change Avatar': 'Add avatar'}</Text>
             </TouchableOpacity>
           </View>
 
@@ -214,8 +218,12 @@ const SignUp = () => {
                   Already registered? Sign In
               </Text>
           </TouchableOpacity>
-          <ImagePickerModal isVisible={isModalVisible} onClose={toggleModal} onImageSelected={handleImageSelected} onImageTaken={handleImageSelected}/>
-          
+          <ImagePickerModal 
+            isVisible={isModalVisible} 
+            onClose={toggleModal} 
+            onImageSelected={handleImageSelected} 
+            onImageTaken={handleImageSelected}
+          />
           {error && <Text style={styles.errorText}>Error: {error.message}</Text>}
         </View>
       </KeyboardAvoidingView>
@@ -229,6 +237,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  loadingContainer: {flex:1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'},
   textInput: {
     color: 'black',
     fontSize: 18,
@@ -270,4 +279,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 10,
   },
+  avatarContainer: {display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 10},
+  avatarImage: {width: 50, height: 50, borderRadius: 50 },
+  avatarTextBtn: { fontSize: 20,color: 'blue' }
 });

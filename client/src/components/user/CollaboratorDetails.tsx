@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react'
+import React from 'react'
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { deleteCollaboratorFromUser } from '../../reduxReducers/userSlice';
@@ -26,7 +26,7 @@ const CollaboratorDetails: React.FC<CollabProps> = ({ collaborator }) => {
 
     const dispatch = useDispatch()
     const [deleteCollaboratorUser] = useMutation(DELETE_COLLABORATOR);
-    const deleteCollaborator = useCallback(async (collaboratorId: string) => {
+    const deleteCollaborator = async (collaboratorId: string) => {
         try{
           await deleteCollaboratorUser({
             variables: {
@@ -38,13 +38,13 @@ const CollaboratorDetails: React.FC<CollabProps> = ({ collaborator }) => {
         }catch(err){
           error('Error deleting Collaborator');
         }
-    },[success, error,deleteCollaboratorUser,deleteCollaboratorFromUser])
+    }
 
-    const askConfirmDelete = useCallback((collaboratorId: string, nameCollaborator: string) =>
+    const askConfirmDelete = (collaboratorId: string, nameCollaborator: string) =>
       Alert.alert('Delete Collaborator?', `${nameCollaborator} will not be able to see the project and relative tasks`, [
         {text: 'Cancel', onPress: () => {}},
         {text: 'OK', onPress: () => deleteCollaborator(collaboratorId)}
-      ]),[deleteCollaborator]);
+      ])
 
     return (
         <View style={{ flex: 1 ,flexDirection: 'row', alignItems: 'center', gap: 20, padding:10 }}>

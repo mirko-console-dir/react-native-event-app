@@ -93,10 +93,10 @@ const TaskItem = ({ todoId, projectId, calendarView, todayTaskCalendarView } : {
     if (showActionButtons) {
       Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
     }
-    setShowFooter((prev) => !prev);
-  }, [showActionButtons, pan]);
+    setShowFooter((showFooter) => !showFooter);
+  }, [showFooter]);
 
-  const goToTask = useCallback(() => {
+  const goToTask = () => {
     if (showFooter) {
       setShowFooter(false);
     }
@@ -104,9 +104,9 @@ const TaskItem = ({ todoId, projectId, calendarView, todayTaskCalendarView } : {
       screen: 'Task',
       params: { todoId: todoId, projectId: projectId },
     });
-  }, [navigation, showFooter, todoId, projectId]);
+  }
 
-  const editTodo = useCallback(() => {
+  const editTodo = () => {
     if (showActionButtons) {
       Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
     }
@@ -114,10 +114,10 @@ const TaskItem = ({ todoId, projectId, calendarView, todayTaskCalendarView } : {
       screen: 'Edit Task',
       params: { todoId: todoId, projectInfo: projectInfo },
     });
-  }, [navigation, showActionButtons, pan, todoId, projectInfo]);
+  }
 
   const [deleteTodoMutation] = useMutation(DELETE_TODO);
-  const deleteTodo = useCallback(async () => {
+  const deleteTodo = async () => {
     try {
       const { data } = await deleteTodoMutation({
         variables: {
@@ -129,9 +129,9 @@ const TaskItem = ({ todoId, projectId, calendarView, todayTaskCalendarView } : {
     } catch (err) {
       error('Error deleting Task');
     }
-  }, [deleteTodoMutation, dispatch, projectId, todoId, success, error]);
+  }
 
-  const askConfirmDelete = useCallback(() => {
+  const askConfirmDelete = () => {
     if (showActionButtons) {
       Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
     }
@@ -139,7 +139,7 @@ const TaskItem = ({ todoId, projectId, calendarView, todayTaskCalendarView } : {
       { text: 'Cancel', onPress: () => {} },
       { text: 'OK', onPress: () => deleteTodo() }
     ]);
-  }, [showActionButtons, pan, deleteTodo]);
+  }
 
 
   return (

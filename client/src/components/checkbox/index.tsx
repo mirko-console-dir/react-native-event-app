@@ -20,4 +20,4 @@ const Checkbox = (props: CheckBoxProps) => {
   )
 }
 
-export default Checkbox
+export default React.memo(Checkbox)

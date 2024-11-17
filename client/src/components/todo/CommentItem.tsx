@@ -1,4 +1,4 @@
-import React, {useState, useImperativeHandle, useCallback} from 'react';
+import React, {useState} from 'react';
 import { View, Text,TouchableOpacity,Keyboard,TouchableWithoutFeedback} from 'react-native';
 import styles from '../../styles'
 import CommentModal from '../modals/comment/CommentModal';
@@ -15,9 +15,9 @@ const CommentItem: React.FC<CommentItemProps> = ({ item, todoId, projectId}) => 
 
     const [isVisibleCommentModal, setIsVisibleCommentModal] = useState(false)
 
-    const toggleCommentModal = useCallback(() =>{
+    const toggleCommentModal = () =>{
         setIsVisibleCommentModal(prev=>!prev);
-    },[])
+    }
 
     return (
         <TouchableWithoutFeedback onPress={()=>Keyboard.dismiss()}>

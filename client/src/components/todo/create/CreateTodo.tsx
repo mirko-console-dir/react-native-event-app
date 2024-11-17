@@ -70,24 +70,24 @@ const CreateTodo = ({today}: StackProps) => {
     const [selectedImages, setSelectedImages] = useState<any[]>([]);
     const [isModalVisible, setModalVisible] = useState(false);
 
-    const handleImageSelected = useCallback(async (imageUri: any) => {
+    const handleImageSelected = async (imageUri: any) => {
       setSelectedImages(prevImages => [...prevImages, { uri: imageUri }]);
       // set form data images
       const existingImages = getValues("newImages")	
       if(existingImages) setValue('newImages', [...existingImages,imageUri])
       else setValue('newImages',[imageUri])
       // END set form data images
-    }, [getValues, setValue]);
+    }
 
-    const toggleModal = useCallback(() => {
+    const toggleModal = () => {
       if (selectedImages.length > 1) {
         warning('Upload max 2 images for task');
       } else {
         setModalVisible(prev => !prev);
       }
-    }, [selectedImages, warning]);
+    }
 
-    const removeImage = useCallback((index: number) => {
+    const removeImage = (index: number) => {
       setSelectedImages(prevImages => prevImages.filter((_, i) => i !== index));
   
       const existingImages = getValues("newImages");
@@ -95,11 +95,11 @@ const CreateTodo = ({today}: StackProps) => {
         existingImages.splice(index, 1);
         setValue('newImages', [...existingImages]);
       }
-    }, [getValues, setValue]);
+    }
     // END Upload images
 
     // Handle data form to send 
-    const fetchImageData = useCallback(async (imageUri: any) => {
+    const fetchImageData = async (imageUri: any) => {
       // Process the uploaded images
       const response : any = await fetch(imageUri);
       const originalFileName = response._bodyBlob._data.name;
@@ -113,7 +113,7 @@ const CreateTodo = ({today}: StackProps) => {
         originalFileName: originalFileName,
         caption: 'Image Caption' // You may replace this with your logic to get the caption
       };
-    },[])
+    }
 
     const [createTodo, { data, loading }] = useMutation(CREATE_TODO);
     const dispatch = useDispatch()
@@ -171,11 +171,11 @@ const CreateTodo = ({today}: StackProps) => {
     // END Handle data form to send 
 
     // Close keybord avoid conflict with data picker onChange
-    const closeKeyboard = useCallback(() => {
+    const closeKeyboard = () => {
       Keyboard.dismiss()
-    },[])
+    }
 
-    const handleDateSelected = useCallback((date: string) => {
+    const handleDateSelected = (date: string) => {
       if (date) {
         setSelectedDate(date);
         setValue('expireDate', date);
@@ -184,28 +184,27 @@ const CreateTodo = ({today}: StackProps) => {
         }
         Keyboard.dismiss();
       }
-    }, [setValue, errors, clearErrors]);
+    }
     
     // Carousel Modal for attached images
     const [carouselModalVisible, setCarouselModalVisible] = useState(false);
     const [carouselIndex, setCarouselIndex] = useState(0);
   
-    const openCarouselModal = useCallback((index: number) => {
+    const openCarouselModal = (index: number) => {
       setCarouselIndex(index);
       setCarouselModalVisible(true);
-    }, []);
+    }
   
-    const closeCarouselModal = useCallback(() => {
+    const closeCarouselModal = () => {
       setCarouselModalVisible(false);
-    }, []);
+    }
   
-    const SaveButtonTask = useCallback(() => (
-      <SaveButton onPress={handleSubmit(handleCreateTodo)} />
+    const handleSave = useCallback(() => (
+      handleSubmit(handleCreateTodo)()
     ), [handleSubmit, handleCreateTodo]);
-    
-    useNavigationOptions({ headerRight: SaveButtonTask });
-
+    useNavigationOptions({ headerRight: ()=> <SaveButton onPress={handleSave} /> });
     // END Save button
+
     if(loading || loadingImage){
       return (
           <View style={{flex:1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center'}}>
@@ -249,7 +248,12 @@ const CreateTodo = ({today}: StackProps) => {
                             </TouchableOpacity>
 
                             {/* Image picker modal */}
-                            <ImagePickerModal isVisible={isModalVisible} onClose={toggleModal} onImageSelected={handleImageSelected} onImageTaken={handleImageSelected}/>
+                            <ImagePickerModal 
+                              isVisible={isModalVisible} 
+                              onClose={toggleModal} 
+                              onImageSelected={handleImageSelected} 
+                              onImageTaken={handleImageSelected}
+                            />
                           </View>
                           {/* END Add Images */}
                       </View>

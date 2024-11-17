@@ -1,4 +1,4 @@
-import React, {useCallback, useState} from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import Modal from "react-native-modal";
@@ -29,7 +29,7 @@ const MemoMoreIconModal: React.FC<MemoMoreIconModalProps> = ({ isVisible, onClos
   });
   
   const [deleteMemoMutation] = useMutation(DELETE_MEMO);
-  const deleteMemo = useCallback(async (memoId:string) => {
+  const deleteMemo = async (memoId:string) => {
     try {
       const { data } = await deleteMemoMutation({
         variables: {
@@ -44,18 +44,18 @@ const MemoMoreIconModal: React.FC<MemoMoreIconModalProps> = ({ isVisible, onClos
     } finally {
       onClose()
     }
-  }, [dispatch, success, error, onClose]);
+  }
 
-  const askConfirmDelete = useCallback((memoId: string, memoTitle: string) =>
+  const askConfirmDelete = (memoId: string, memoTitle: string) =>
     Alert.alert('Delete Memo?', `${memoTitle} will be delete`, [
       {text: 'Cancel', onPress: () => {}},
       {text: 'OK', onPress: () => deleteMemo(memoId)}
-    ]),[deleteMemo]);
+    ]);
 
-  const editMemo = useCallback((memoId:string) => {
+  const editMemo = (memoId:string) => {
     onClose()
     navigation.navigate('Edit Memo', {memoId: memoId}) 
-  }, [navigation, onClose]);
+  }
   
   return (
     <Modal isVisible={isVisible} onBackdropPress={onClose}>
